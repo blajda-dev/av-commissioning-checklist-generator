@@ -108,7 +108,7 @@ namespace CommissioningChecklistGenerator.Tasks
             DynamicTasks = new BindingList<Task>();
 
             FixedTasks.Add(new Task("{Source.Input}: {Source.Name} has the correct edid applied to it", TaskType.Source, MediaType.Video));
-            FixedTasks.Add(new Task("{Source.Input}: {Source.Name}'s input gain has been adjusted so that {Source.Name}'s playback level is equal to that of other video sources", TaskType.Source, MediaType.Video));
+            FixedTasks.Add(new Task("{Source.Input}: {Source.Name}'s input gain has been adjusted so that {Source.Name}'s playback level is equal to that of other sources if possible", TaskType.Source, MediaType.Video));
 
             FixedTasks.Add(new Task("{Source.Input}: {Source.Name} signal's gain has been set to acheive a nominal level of -15dBFS or 0dBU", TaskType.Source, MediaType.Audio));
             FixedTasks.Add(new Task("{Source.Input}: {Source.Name} if the volume level can be controlled independently, it is reset upon system startup and/or shutdown", TaskType.Source, MediaType.Audio));
