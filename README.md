@@ -1,7 +1,7 @@
 # Commissioning Checklist Generator
 
 ## Overview
-A nearly complete revamp of the old generator. This new application will take a DXF file of a line drawing, and parse any available 
+A nearly complete revamp of the old generator. This new application will take a DXF or DWG file of a line drawing, and parse any available 
 devices from the system that can be commissioning by a field engineer or quality assurance engineer and generate an excel checklist 
 containing pertinent tasks for that device, using a database of functionality that the device should/could be capable of. If the device
 has a model defined in the database that functionality will override any basic prefix-based functionality. 
@@ -27,8 +27,8 @@ To begin you'll need to import the devices from the system that can be configure
 configuration file.
 
 
-1. Import DXF File
-	1. have the engineer provide you with a dxf version of the drawings or use an online converter to convert the DWG file in the CAD folder to a DXF file.
+1. Import CAD File
+	1. find the system DWG or DXF file from the CAD folder, create a copy and import into the application.
 1. Import JSON File
 	1. if you have used the generator previously on an identical system or are generating them for multiple rooms in a system you can import the json file, which will be quicker than parsing the DXF drawing file.
 	
