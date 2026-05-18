@@ -5,6 +5,7 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
+using CommissioningChecklistGenerator.UI;
 
 namespace CommissioningChecklistGenerator
 {
@@ -13,6 +14,6 @@ namespace CommissioningChecklistGenerator
     /// </summary>
     public partial class App : Application
     {
-        public static UI.MainWindow Window => (UI.MainWindow)Application.Current.MainWindow;
+        public static MainWindow Window => (MainWindow)Application.Current.MainWindow;
     }
 }
