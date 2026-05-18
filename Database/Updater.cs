@@ -21,7 +21,11 @@ namespace CommissioningChecklistGenerator.Database
     public static class Updater
     {
         private const string Prefix = "[Updater]";
-        private static readonly HttpClient client = new HttpClient();
+
+        //dont allow auto-redirects to prevent us from downloading http error results
+        //we only ever want to get an response from the url we are targeting
+        private static readonly HttpClient client = new HttpClient(new HttpClientHandler() { AllowAutoRedirect = false });
+
         private const int maximumMoveAttepts = 5;
         private const int moveAttemptInterval = 500;
         private static Timer? databaseUpdateTimer;
@@ -87,11 +91,16 @@ namespace CommissioningChecklistGenerator.Database
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private static async void DatabaseDownloadCompleted()
+        private static async void DatabaseDownloadCompleted(bool success, string reason)
         {
-            IsDownloading = false;
+            Log.Information($"{Prefix} downloading latest database from server @ {Configuration.ApplicationConfiguration.ServerURL} was a {(success ? "success" : "failure")}");
 
-            await Querier.ConnectToDatabase();
+            if (success) { 
+                (bool opened, string connect) = await Querier.ConnectToLocalDatabase(); 
+
+                if (!opened) { MessageBox.Show($"The downloaded database file could not be opened:\r\r{connect}", "Failure Opening Database"); }
+            }
+            else { MessageBox.Show($"Unable to download the latest database: {reason}\r\rThe application was shipped with an embedded database which shall be used as a last resort but this may be out of date.", "Failure Updating Database"); }
         }
 
         /// <summary>
@@ -104,9 +113,9 @@ namespace CommissioningChecklistGenerator.Database
                 PrepareForDatabaseDownload();
             }
             catch (Exception e) {
-                Log.Warning(e, $"{Prefix} downloading new database"); 
+                Log.Warning(e, $"{Prefix} downloading new database");
+                IsDownloading = false;
             }
-            finally { IsDownloading = false; }
         }
 
         /// <summary>
@@ -126,10 +135,11 @@ namespace CommissioningChecklistGenerator.Database
                     await Task.Run(async () =>
                     {
                         Log.Information($"{Prefix} attempting to get latest database from server @ {Configuration.ApplicationConfiguration.ServerURL}");
-                        await PerformDatabaseUpdate(progress);
-                        DatabaseDownloadCompleted();
+                        (bool result, string reason) = await PerformDatabaseUpdate(progress);
+                        DatabaseDownloadCompleted(result, reason);
                     });
                     window.Close();
+                    IsDownloading = false;
                 });
             }
             else { Log.Warning($"{Prefix} server url is not valid, cannot download remote database"); }
@@ -139,8 +149,11 @@ namespace CommissioningChecklistGenerator.Database
         /// connects to the database, downloads the database to a temp file, deletes the old database, and renames the temp file
         /// </summary>
         /// <param name="reporter">the progress reporter to update the ui thread</param>
-        private static async Task PerformDatabaseUpdate(IProgress<ProgressUpdate> reporter)
+        private static async Task<(bool, string)> PerformDatabaseUpdate(IProgress<ProgressUpdate> reporter)
         {
+            bool result = false;
+            string reason = "unknown failure";
+
             try
             {
                 using (HttpResponseMessage response = await client.GetAsync(GenerateRemoteDatabaseLocation(), HttpCompletionOption.ResponseHeadersRead))
@@ -152,40 +165,61 @@ namespace CommissioningChecklistGenerator.Database
 
                     if (response.IsSuccessStatusCode)
                     {
-                        progress += 5;
-                        reporter.Report(new ProgressUpdate(progress, "Success Response Requesting Database File"));
-                        Log.Information($"{Prefix} succeeded in request database file from server @ {GenerateRemoteDatabaseLocation()}");
-                        //wait for the checklist generator to be complete if running so we dont corrupt the database by writing to the file while in use
-                        Log.Information($"{Prefix} waiting for generator to finish using database before beginning update");
+                        if (response.Content.Headers.ContentLength != 0)
+                        {
+                            progress += 5;
+                            reporter.Report(new ProgressUpdate(progress, "Success Response Requesting Database File"));
+                            Log.Information($"{Prefix} succeeded in request database file from server @ {GenerateRemoteDatabaseLocation()}");
+                            //wait for the checklist generator to be complete if running so we dont corrupt the database by writing to the file while in use
+                            Log.Information($"{Prefix} waiting for generator to finish using database before beginning update");
 
-                        await Generator.Idle.WaitAsync(new TimeSpan(0, 0, 5));
+                            await Generator.Idle.WaitAsync(new TimeSpan(0, 0, 5));
 
-                        string? tempFile = await DownloadDatabaseToTemporaryFile(reporter, response);
+                            string? tempFile = await DownloadDatabaseToTemporaryFile(reporter, response);
 
-                        bool renamed = false;
+                            
 
-                        if (tempFile != null) { renamed = await RenameTemporaryDatabase(reporter, tempFile); }
-                        else { Log.Fatal($"{Prefix} unable to move temporary database!"); }
+                            if (tempFile != null) {
+                                (bool valid, reason) = await Querier.ValidateTemporaryDatabase(tempFile);
 
-                        Log.Information($"{Prefix} database file move/rename operations {(renamed ? "succeeded" : "failed")}");
+                                if (valid)
+                                {
+                                    bool renamed = await RenameTemporaryDatabase(reporter, tempFile);
+                                    Log.Information($"{Prefix} database file move/rename operations {(renamed ? "succeeded" : "failed")}");
+                                    result = renamed;
+                                }
+                            }
+                            else { 
+                                Log.Fatal($"{Prefix} unable to move temporary database!");
+                                reason = "Unable to write database to a temporary file";
+                            }
+                        }
+                        else
+                        {
+                            reason = $"The downloaded file is empty!";
+
+                            Log.Error($"The server provided a file of size {response.Content.Headers.ContentLength}, which is invalid");
+                        }
                     }
                     else
                     {
                         Log.Error($"{Prefix} server responded with error: {(int)response.StatusCode} ({response.StatusCode}) when attempting to retrieve database @ {GenerateRemoteDatabaseLocation()}");
 
-                        App.Current.Dispatcher.Invoke(() =>
-                        {
-                            MessageBox.Show($"Unable to download database from server: {Configuration.ApplicationConfiguration.ServerURL}\r\rThe server responded with {(int)response.StatusCode}: {response.ReasonPhrase}. The application was shipped with an embedded database which will be used as a last resort, but it may be limited or out of date.", "Download Failed");
-                        });
+                        reason = $"The server responded with {(int)response.StatusCode}: {response.ReasonPhrase}, when attempting to retrieve database @ {GenerateRemoteDatabaseLocation()}";
                     }
 
-                    Log.Information($"{Prefix} database update {(response.IsSuccessStatusCode ? "completed" : "failed")}");
+                    Log.Information($"{Prefix} database update {(result ? "completed" : "failed")}");
 
                     progress = 100;
                     reporter.Report(new ProgressUpdate(progress, response.IsSuccessStatusCode ? "Completed" : "Failed"));
                 }
             }
-            catch(Exception e) { Log.Fatal(e, $"{Prefix} requesting database from server @ {GenerateRemoteDatabaseLocation()}"); }
+            catch(Exception e) {
+                reason = $"Failed to contact database @ {Configuration.ApplicationConfiguration.ServerURL}";
+                Log.Fatal(e, $"{Prefix} requesting database from server @ {GenerateRemoteDatabaseLocation()}"); 
+            }
+
+            return (result, reason);
         }
 
         /// <summary>
@@ -268,41 +302,49 @@ namespace CommissioningChecklistGenerator.Database
         /// <returns></returns>
         private static async Task<bool> RenameTemporaryDatabase(IProgress<ProgressUpdate> reporter, string temp)
         {
-            Querier.DisconnectFromDatabase();
-
             bool result = false;
-            for (int attempt = 0; attempt < maximumMoveAttepts; attempt++)
-            {
-                //delete the old file first
-                if (File.Exists(DatabaseConstants.LatestDatabaseFilePath))
-                {
-                    try {
-                        File.Delete(DatabaseConstants.LatestDatabaseFilePath);
-                        Log.Information($"{Prefix} deleted existing database @ {DatabaseConstants.LatestDatabaseFilePath}");
-                    }
-                    catch (Exception e) { Log.Fatal(e, $"{Prefix} unable to delete database @ {DatabaseConstants.LatestDatabaseFilePath}"); }
-                }
 
-                if (!File.Exists(DatabaseConstants.LatestDatabaseFilePath))
+            bool disconnected = await Querier.DisconnectFromLocalDatabase();
+
+            if (disconnected)
+            {
+
+                for (int attempt = 0; attempt < maximumMoveAttepts; attempt++)
                 {
-                    try
+                    //delete the old file first
+                    if (File.Exists(DatabaseConstants.LatestDatabaseFilePath))
                     {
-                        File.Move(temp, DatabaseConstants.LatestDatabaseFilePath);
-                        Log.Information($"{Prefix} renamed temp database @ {temp} -> {DatabaseConstants.LatestDatabaseFilePath}");
-                        result = true;
-                        progress += 5;
-                        reporter.Report(new ProgressUpdate(progress, "Moved Temporary Database"));
+                        try
+                        {
+                            File.Delete(DatabaseConstants.LatestDatabaseFilePath);
+                            Log.Information($"{Prefix} deleted existing database @ {DatabaseConstants.LatestDatabaseFilePath}");
+                        }
+                        catch (Exception e) { Log.Fatal(e, $"{Prefix} unable to delete database @ {DatabaseConstants.LatestDatabaseFilePath}"); }
                     }
-                    catch (Exception e) { Log.Fatal(e, $"{Prefix} unable to rename/move database @ {temp} -> {DatabaseConstants.LatestDatabaseFileName}"); }
-                }
-                //if we succeed, exit the loop early
-                if (result) { break; }
-                else
-                {
-                    Log.Warning($"{Prefix} failed to migrate database @ {temp} -> {DatabaseConstants.LatestDatabaseFileName} attempt [{attempt} / {maximumMoveAttepts}]");
-                    await Task.Delay(moveAttemptInterval);
+
+                    if (!File.Exists(DatabaseConstants.LatestDatabaseFilePath))
+                    {
+                        try
+                        {
+                            File.Move(temp, DatabaseConstants.LatestDatabaseFilePath);
+                            Log.Information($"{Prefix} renamed temp database @ {temp} -> {DatabaseConstants.LatestDatabaseFilePath}");
+                            result = true;
+                            progress += 5;
+                            reporter.Report(new ProgressUpdate(progress, "Moved Temporary Database"));
+                        }
+                        catch (Exception e) { Log.Fatal(e, $"{Prefix} unable to rename/move database @ {temp} -> {DatabaseConstants.LatestDatabaseFileName}"); }
+                    }
+                    //if we succeed, exit the loop early
+                    if (result) { break; }
+                    else
+                    {
+                        Log.Warning($"{Prefix} failed to migrate database @ {temp} -> {DatabaseConstants.LatestDatabaseFileName} attempt [{attempt} / {maximumMoveAttepts}]");
+                        await Task.Delay(moveAttemptInterval);
+                    }
                 }
             }
+            else { Log.Warning($"{Prefix} unable to start move operations, failed to disconenct from database"); }
+
             return result;
         }
     }
