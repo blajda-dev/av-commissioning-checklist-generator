@@ -1,4 +1,4 @@
-﻿using CommissioningChecklistGenerator.AVSystem;
+﻿using CommissioningChecklistGenerator.ProjectModel;
 using CommissioningChecklistGenerator.Checklist;
 using Microsoft.Data.Sqlite;
 using Dapper;
@@ -13,6 +13,8 @@ using System.Collections.Immutable;
 using Newtonsoft.Json.Bson;
 using System.Threading.Tasks;
 using System.Reflection;
+using System.Windows.Documents;
+using System.Xml.XPath;
 
 namespace CommissioningChecklistGenerator.Database
 { 
@@ -63,57 +65,138 @@ namespace CommissioningChecklistGenerator.Database
             return result;
         }
 
-        /// <summary>
-        /// connects to the database
-        /// </summary>
-        public static async Task<bool> ConnectToDatabase()
+        public static async Task<bool> GetDatabaseConnectionState()
         {
-            bool result = DisconnectFromDatabase();
-            Log.Information($"{Prefix} disconnect from previous database {(result ? "succeeded" : "failed")}");
-
-            string path = DetermineDesiredDatabase();
-
-            Log.Debug($"{Prefix} using database @ {path}");
-
-            if (File.Exists(path))
-            {
-                Connection = new SqliteConnection($"Data Source={path}");
-
-                try { await Connection.OpenAsync(); }
-                catch (Exception e)
-                {
-                    Log.Fatal(e, $"{Prefix} failed to open database @ {path}");
-                    MessageBox.Show($"Exception: {e.Message}\r\rHas caused a failure to open the desired database: {path}", "Failure To Open Database");
-                }
-
-                Log.Debug($"{Prefix} database @ {path} is {Connection.State.ToString().ToLower()}!");
-
-                if (Connection.State == ConnectionState.Open) { }
-            }
-            else {
-                Log.Fatal($"{Prefix} database file @ {path} does not exist -> Cannot open a file that does not exist.");
-                MessageBox.Show($"File Does Not Exist: {path}\r\rCannot open a file that does not exist.", "Failure To Open Database");
-            }
-
-            return Connection.State == ConnectionState.Open;
+            
+            (bool result, string reason) = await ValidateDatabase(Connection);
+            Log.Information($"{Prefix} retrieve database @ {DetermineDesiredDatabase()} connection state -> {(result ? Connection.State.ToString().ToLower() : "Invalid")}");
+            return result;
         }
 
-        public static bool DisconnectFromDatabase()
+        public static async Task<(bool, string)> ValidateTemporaryDatabase(string path)
+        {
+            string source = GenerateConnectionString(path);
+
+            SqliteConnection conn = new SqliteConnection(source);
+
+            (bool result, string reason) = await Querier.ConnectToDatabase(conn);
+
+            await Querier.DisconnectFromDatabase(conn);
+
+            return (result, reason);
+        }
+
+        public static async Task<(bool, string)> ValidateDatabase(SqliteConnection connection)
+        {
+            bool valid = false;
+            string reason = "unknown validation error";
+
+            try
+            {
+                using(SqliteCommand cmd = new SqliteCommand("SELECT COUNT(*) FROM sqlite_master WHERE type-'table'", connection))
+                {
+                    object? result = await cmd.ExecuteScalarAsync();
+                    if (result != null)
+                    {
+                        Log.Debug($"{Prefix} retr");
+                        if (result != null) { valid = true; }
+                    }
+                }
+            }
+            catch (Exception e) { 
+                Log.Fatal(e, $"{Prefix} failed to get count from sqlite master table from database file @ {connection.DataSource}");
+                reason = "exception attempting to query database for master tables";
+            }
+            
+            if (valid) { Log.Information($"{Prefix} sqlite database verification successful"); }
+            else 
+            {
+                reason = "no tables found within database, assuming file has been corrupted";
+                Log.Fatal($"{Prefix} sqlite database @ {connection.DataSource} verification failed"); 
+            }
+            
+            return (valid, reason);
+        }
+
+        public static string GenerateConnectionString(string path)
+        {
+            SqliteConnectionStringBuilder builder = new SqliteConnectionStringBuilder();
+            builder.DataSource = path;
+            builder.Mode = SqliteOpenMode.ReadOnly;
+
+            return builder.ToString();
+        }
+
+        /// <summary>
+        /// connects to the local database whether that be the embedded or latest
+        /// </summary>
+        /// <returns></returns>
+        public static async Task<(bool, string)> ConnectToLocalDatabase()
+        {
+            Connection.ConnectionString = GenerateConnectionString(DetermineDesiredDatabase());
+            return await ConnectToDatabase(Connection);
+        }
+
+        /// <summary>
+        /// connects to the database from the connection provided
+        /// </summary>
+        public static async Task<(bool, string)> ConnectToDatabase(SqliteConnection conn)
+        {
+            bool result = await DisconnectFromDatabase(conn);
+
+            bool open = false;
+            string reason = "unknown reason";
+
+            Log.Information($"{Prefix} disconnect from previous database {(result ? "succeeded" : "failed")}");
+
+            Log.Information($"{Prefix} using database @ {conn.DataSource}");
+
+            if (File.Exists(conn.DataSource))
+            {
+                try
+                {
+                    await conn.OpenAsync();
+
+                    (open, reason) = await ValidateDatabase(conn);
+                }
+                catch (Exception e)
+                {
+                    Log.Fatal(e, $"{Prefix} failed to open database @ {conn.DataSource}");
+                    MessageBox.Show($"Exception: {e.Message}\r\rHas caused a failure to open the desired database: {conn.DataSource}", "Failure To Open Database");
+                }
+
+                if (open) { Log.Information($"{Prefix} database @ {conn.DataSource} is {Connection.State.ToString().ToLower()}!"); }
+            }
+            else {
+                Log.Fatal($"{Prefix} database file @ {conn.DataSource} does not exist -> Cannot open a file that does not exist.");
+                MessageBox.Show($"File Does Not Exist: {conn.DataSource}\r\rCannot open a file that does not exist.", "Failure To Open Database");
+            }
+
+            return (open, reason);
+        }
+
+        public static async Task<bool> DisconnectFromLocalDatabase()
+        {
+            return await DisconnectFromDatabase(Connection);
+        }
+
+        public static async Task<bool> DisconnectFromDatabase(SqliteConnection conn)
         {
             bool result = false;
             try
             {
-                if (Connection.DataSource != String.Empty) { Log.Information($"{Prefix} disconnecting from database @ {Connection.DataSource}"); }
-                else { Log.Information($"{Prefix} database source unavailable, must have already closed"); }
+                if (conn.State == ConnectionState.Open && conn.DataSource != String.Empty) { Log.Information($"{Prefix} disconnecting from database @ {conn.DataSource}"); }
+                else { Log.Debug($"{Prefix} database source unavailable, must have already closed"); }
                 
-                Connection.Close();
+                await conn.CloseAsync();
 
-                if (Connection.DataSource != String.Empty) { Log.Information($"{Prefix} disconnected from database @ {Connection.DataSource}"); }
-                if (Connection.DataSource != String.Empty) { Log.Information($"{Prefix} clearing connection pool @ {Connection.DataSource}"); }
+                if (conn.State == ConnectionState.Closed && conn.DataSource != String.Empty) { Log.Information($"{Prefix} disconnected from database @ {conn.DataSource}"); }
                 
-                SqliteConnection.ClearPool(Connection);
+                Log.Debug($"{Prefix} clearing connection pool @ {conn.DataSource}");
+                
+                SqliteConnection.ClearPool(conn);
 
-                if (Connection.DataSource != String.Empty) { Log.Information($"{Prefix} cleared connection pool @ {Connection.DataSource}"); }
+                Log.Debug($"{Prefix} cleared connection pool @ {conn.DataSource}");
                 
                 result = true;
             }
@@ -140,7 +223,7 @@ namespace CommissioningChecklistGenerator.Database
                     Log.Debug($"{Prefix} executing: {command} on database @ {Connection.DataSource}");
                     results = Connection.Query(command).Select(row => new Dictionary<string, object>((IDictionary<string, object>)row)).ToList();
                 }
-                catch(Exception e) { Log.Error(e, $"while executing cmd: {commandPart} on view: {view}");  }
+                catch(Exception e) { Log.Error(e, $"{Prefix} while executing cmd: {commandPart} on view: {view}");  }
             }
             else { Log.Warning($"{Prefix} cannot query database @ {Connection.DataSource} -> connection: {Connection.State}");  }
 
@@ -198,7 +281,7 @@ namespace CommissioningChecklistGenerator.Database
                     rows = Querier.QueryView("device_effective_capability", $"WHERE {cmd}");
                 }
 
-                Log.Information($"{Prefix} found {rows.Count} capabilities for {device.Name} [{device.Prefix}] | {device.Model}");
+                Log.Debug($"{Prefix} found {rows.Count} capabilities for {device.Name} [{device.Prefix}] | {device.Model}");
 
                 rows.ForEach(r =>
                 {
@@ -228,23 +311,26 @@ namespace CommissioningChecklistGenerator.Database
                     desired = $"device_model_name = '{device.Model}'";
                 }
 
-                Log.Information($"{Prefix} get {desired} tasks from view: {view}");
+                Log.Debug($"{Prefix} get {desired} tasks from view: {view}");
 
                 List<Dictionary<string, object>> rows = Querier.QueryView(view, $"WHERE {desired}");
 
+                string type = "model";
 
                 if (rows.Count == 0) {
-                    Log.Information($"{Prefix} failure to to find model specific tasks for {device.Name} [{device.Prefix}] -> {device.Model}");
+                    type = "prefix";
+
+                    Log.Debug($"{Prefix} failure to to find model specific tasks for {device.Name} [{device.Prefix}] -> {device.Model}");
                 
                     desired = $"device_type_prefix = '{device.Prefix}'";
                     view = DatabaseConstants.DeviceTypeTaskView;
 
-                    Log.Information($"{Prefix} get {desired} tasks from view: {view}");
+                    Log.Debug($"{Prefix} get {desired} tasks from view: {view}");
                 
                    rows = Querier.QueryView(view, $"WHERE {desired}");
                 }
 
-                Log.Information($"{Prefix} found {rows.Count} tasks for device: {device.Name} [{device.Prefix}]");
+                Log.Information($"{Prefix} found {rows.Count} {type} based tasks for device: {device.Name} [{device.Prefix}] -> ({device.Model} | {device.Manufacturer} | {device.Description})");
 
                 rows.ForEach(r =>
                 {
