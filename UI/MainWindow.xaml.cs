@@ -1,0 +1,617 @@
+﻿using System;
+using System.Windows;
+using System.Linq;
+using System.ComponentModel;
+using CommissioningChecklistGenerator.AVSystem;
+using System.IO;
+using Newtonsoft.Json;
+using System.Collections.Generic;
+using CommissioningChecklistGenerator.Checklist;
+using ClosedXML.Excel;
+using System.Windows.Controls;
+using CommissioningChecklistGenerator.Drawings;
+using Serilog;
+using Serilog.Sinks.File;
+using Microsoft.VisualBasic.FileIO;
+using System.Threading.Tasks;
+using CommissioningChecklistGenerator.Database;
+using CommissioningChecklistGenerator.Extensions;
+using DocumentFormat.OpenXml.Office2010.Excel;
+using CommissioningChecklistGenerator.UI;
+using DocumentFormat.OpenXml.Drawing.Charts;
+
+namespace CommissioningChecklistGenerator.UI
+{
+    /// <summary>
+    /// Interaction logic for MainWindow.xaml
+    /// </summary>
+    public partial class MainWindow : System.Windows.Window
+    {
+        private const string Prefix = "[App]";
+        public AVSystem.AVSystem Project { get; set; }
+
+        public MainWindow()
+        {
+            ConfigureLogging();
+            Log.Debug($"{Prefix} create new av system");
+            Project = new AVSystem.AVSystem();
+            Log.Debug($"{Prefix} set data context");
+            DataContext = this;
+            Log.Debug($"{Prefix} subscribe to window initialized event");
+            this.ContentRendered += OnShown;
+            Log.Debug($"{Prefix} initialize window");
+            InitializeComponent();
+
+            /*
+            //hide edit buttons by default
+            EditSource.Visibility = Visibility.Hidden;
+            EditDevice.Visibility = Visibility.Hidden;
+            EditUserInterface.Visibility = Visibility.Hidden;
+            EditDestination.Visibility = Visibility.Hidden;
+            //hide delete buttons by default
+            DeleteSource.Visibility = Visibility.Hidden;
+            DeleteDevice.Visibility = Visibility.Hidden;
+            DeleteUserInterface.Visibility = Visibility.Hidden;
+            DeleteDestination.Visibility = Visibility.Hidden;
+            */
+
+            Log.Debug($"{Prefix} subscribe to list change events");
+            Project.Sources.ListChanged += OnListSizeChanged;
+            Project.Destinations.ListChanged += OnListSizeChanged;
+            Project.ControlledDevices.ListChanged += OnListSizeChanged;
+            Project.UserInterfaces.ListChanged += OnListSizeChanged;
+
+            Log.Debug($"{Prefix} subscribe to drawing parsed event");
+            Drawings.DrawingParser.DrawingParsed = OnParseSystemDrawingsCompleted;
+        }
+
+        private async void OnShown(object? sender, EventArgs e)
+        {
+            Log.Information($"{Prefix} started");
+            //wait for the configuration file to be read before starting up the querier to get the latest database
+            bool success = await CommissioningChecklistGenerator.ConfigurationReader.Initialize();
+
+            if (!success) { 
+                ConfigurationWindow configDialog = new ConfigurationWindow();
+                configDialog.Owner = this;
+                configDialog.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+                configDialog.ShowDialog();
+
+                if (configDialog.DialogResult == true) { Configuration.ApplicationConfiguration.ServerURL = configDialog.ServerURL.Text; }
+                
+                CommissioningChecklistGenerator.Database.Updater.Initialize();
+            }
+            Log.Information($"{Prefix} initialized");
+        }
+
+        /// <summary>
+        /// configures logging to the debug output and file on startup
+        /// </summary>
+        private void ConfigureLogging()
+        {
+            Log.Logger = new LoggerConfiguration()
+            .WriteTo.Debug()
+            .WriteTo.File(
+                path: Path.Combine(Constants.ApplicationDataDirectory, "logs", "log-.log"),
+                rollingInterval: RollingInterval.Day,
+                outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}"
+            )
+            #if DEBUG
+            .MinimumLevel.Debug()
+            #else
+            .MinimumLevel.Information()
+            #endif
+            .CreateLogger();
+            
+            Log.Debug($"{Prefix} successfully configured logging");
+        }
+
+        /// <summary>
+        /// shows a messagebox that the specified feature is not implemented
+        /// </summary>
+        private void ShowNotImplementedMessage()
+        {
+            string messageBoxText = "This feature is not available yet.\r\nGo bother Ryan about implementing it.";
+            string caption = "Not Implemented";
+            MessageBoxButton button = MessageBoxButton.OK;
+            MessageBoxImage icon = MessageBoxImage.Exclamation;
+
+            MessageBox.Show(messageBoxText, caption, button, icon, MessageBoxResult.Yes);
+        }
+
+        private void OnHelp(object sender, RoutedEventArgs e)
+        {
+            MessageBox.Show("""
+                This generator will use a sql database to generate a commissioning checklist for an AV system.
+                
+                You need to provide it a DXF drawing of the AV system; ideally provided by the project engineer. This can also be done by droppping the drawing .DWG file into a converter online, and it will spit it out for you. 
+                
+                As long as your drawing uses the standard block and prefix system, the database will know how to retrieve tasks for any device present in the system that has been determined as "commissionable."
+
+                The database will automatically be downloaded every time you start up the application, and once every hour while it is running. To adjust the location of the database, use the open the settings.
+                """, "Help");
+        }
+
+        /// <summary>
+        /// called when the server url button is clicked
+        /// </summary>
+        /// <param name="sender">the button that sent the event handler</param>
+        /// <param name="e">the click event args</param>
+        private void OnEditApplicationConfiguration(object sender, RoutedEventArgs e)
+        {
+            ConfigurationWindow configDialog = new ConfigurationWindow();
+            configDialog.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            configDialog.Owner = this;
+            configDialog.ShowDialog(); 
+            if (configDialog.DialogResult == true) { Configuration.ApplicationConfiguration.ServerURL = configDialog.ServerURL.Text; }
+        }
+
+        private void OnDownloadingDatabase(object? sender, EventArgs e)
+        {
+            if (sender != null)
+            {
+                this.DownloadDatabaseButton.IsEnabled = !((bool)sender);
+            }
+        }
+
+        private void OnDownloadDatabase(object sender, RoutedEventArgs e)
+        {
+            Updater.DownloadDatabase();
+        }
+
+        /// <summary>
+        /// an event handler called when any system list size changes to determine which buttons should be shown
+        /// </summary>
+        /// <param name="sender">the list that changed</param>
+        /// <param name="e">the details of the change</param>
+        private void OnListSizeChanged(object? sender, ListChangedEventArgs e) {
+            if (sender != null) {
+                if (((BindingList<AVSystem.Device>)sender).Count == 0) {
+                    /*
+                    if (SourceList.Items.Count == 0) { 
+                        EditSource.Visibility = Visibility.Hidden;
+                        DeleteSource.Visibility = Visibility.Hidden;
+                    }
+                    if (DestinationList.Items.Count == 0) { 
+                        EditDestination.Visibility = Visibility.Hidden;
+                        DeleteDestination.Visibility = Visibility.Hidden;
+                    }
+                    if (UserInterfaceList.Items.Count == 0) { 
+                        EditUserInterface.Visibility = Visibility.Hidden;
+                        DeleteUserInterface.Visibility = Visibility.Hidden;
+                    }
+                    if (ControlledDeviceList.Items.Count == 0) { 
+                        EditDevice.Visibility = Visibility.Hidden;
+                        DeleteDevice.Visibility = Visibility.Hidden;
+                    }
+                }
+                else {
+                    if (SourceList.Items.Count != 0) { 
+                        EditSource.Visibility = Visibility.Visible;
+                        DeleteSource.Visibility = Visibility.Visible;
+                    }
+                    if (DestinationList.Items.Count != 0) { 
+                        EditDestination.Visibility = Visibility.Visible;
+                        DeleteDestination.Visibility = Visibility.Visible;
+                    }
+                    if (UserInterfaceList.Items.Count != 0) { 
+                        EditUserInterface.Visibility = Visibility.Visible;
+                        DeleteUserInterface.Visibility = Visibility.Visible;
+                    }
+                    if (ControlledDeviceList.Items.Count != 0) { 
+                        EditDevice.Visibility = Visibility.Visible;
+                        DeleteDevice.Visibility = Visibility.Visible;
+                    }
+                    */
+                }
+            }
+        }
+
+        /*
+        private void EditListItem(List<Device> list, AVSystem.DeviceType type, int selectedItem, Device itemToEdit)
+        {
+            if (list.Count != 0)
+            {
+                if (selectedItem >= 0 && selectedItem < list.Count)
+                {
+                    AddEditItem addEditWindow = new(type, itemToEdit);
+                    //open add dialog
+                    bool? result = addEditWindow.ShowDialog();
+                    //changes were saved, and not discarded
+                    if (result == true) addEditWindow.thisDevice.CopyTo(list[selectedItem]);
+                }
+                else { MessageBox.Show($"Please Select A {type}", $"Error: Edit {type}", MessageBoxButton.OK, MessageBoxImage.Warning); }
+            }
+            else { MessageBox.Show($"Add {type} Before Trying To Edit", $"Error: Edit {type}", MessageBoxButton.OK, MessageBoxImage.Warning); }
+        }
+
+        private void DeleteListItem(BindingList<Device> list, AVSystem.DeviceType type, int selectedItem)
+        {
+            if (list.Count != 0)
+            {
+                if (selectedItem >= 0 && selectedItem < list.Count)
+                {
+                    //open delete dialog & if delete confirmed
+                    if (ShowDeleteItemConfirmationMessage(type, list[selectedItem]) == MessageBoxResult.Yes) list.RemoveAt(selectedItem);
+                }
+                else { MessageBox.Show($"Please Select A {type}", $"Error: Edit {type}", MessageBoxButton.OK, MessageBoxImage.Warning); }
+            }
+            else { MessageBox.Show($"Add {type} Before Trying To Edit", $"Error: Edit {type}", MessageBoxButton.OK, MessageBoxImage.Warning); }
+        }
+
+
+        private void OnAddSourceClicked(object sender, RoutedEventArgs e)
+        {
+            //open add dialog 
+            AddEditItem addEditWindow = new (AVSystem.DeviceType.Source);
+            bool? result = addEditWindow.ShowDialog();
+
+            if (result == true) Project.Sources.Add(addEditWindow.thisDevice);
+        }
+
+
+        private void OnEditSourceClicked(object sender, RoutedEventArgs e)
+        {
+            EditListItem(Project.Sources.ToList(), DeviceType.Source, SourceList.SelectedIndex, (Device)SourceList.SelectedItem);
+        }
+
+        private void OnDeleteSourceClicked(object sender, RoutedEventArgs e) {
+            DeleteListItem(Project.Sources, DeviceType.Source, SourceList.SelectedIndex);
+        }
+
+        private void OnAddDeviceClicked(object sender, RoutedEventArgs e)
+        {
+            //open add dialog 
+            AddEditItem addEditWindow = new(AVSystem.DeviceType.ControlledDevice);
+            bool? result = addEditWindow.ShowDialog();
+
+            if (result == true) Project.ControlledDevices.Add(addEditWindow.thisDevice);
+        }
+
+
+        private void OnEditDeviceClicked(object sender, RoutedEventArgs e)
+        {
+            EditListItem(Project.ControlledDevices.ToList(), DeviceType.ControlledDevice, ControlledDeviceList.SelectedIndex, (Device)ControlledDeviceList.SelectedItem);
+        }
+
+        private void OnDeleteDeviceClicked(object sender, RoutedEventArgs e) 
+        {
+            DeleteListItem(Project.ControlledDevices, DeviceType.ControlledDevice, ControlledDeviceList.SelectedIndex);
+        }
+
+        private void OnAddDestinationClicked(object sender, RoutedEventArgs e)
+        {
+            //open add dialog 
+            AddEditItem addEditWindow = new(AVSystem.DeviceType.Destination);
+            bool? result = addEditWindow.ShowDialog();
+
+            if (result == true) Project.Destinations.Add(addEditWindow.thisDevice);
+        }
+
+        private void OnEditDestinationClicked(object sender, RoutedEventArgs e)
+        {
+            EditListItem(Project.Destinations.ToList(), DeviceType.Destination, DestinationList.SelectedIndex, (Device)DestinationList.SelectedItem);
+        }
+
+        private void OnDeleteDestinationClicked(object sender, RoutedEventArgs e) 
+        {
+            DeleteListItem(Project.Destinations, DeviceType.Destination, DestinationList.SelectedIndex);
+        }
+
+        private void OnAddUserInterfaceClicked(object sender, RoutedEventArgs e)
+        {
+            //open add dialog 
+            AddEditItem addEditWindow = new(AVSystem.DeviceType.UserInterface);
+            bool? result = addEditWindow.ShowDialog();
+
+            if (result == true) Project.UserInterfaces.Add(addEditWindow.thisDevice);
+        }
+
+        private void OnEditUserInterfaceClicked(object sender, RoutedEventArgs e)
+        {
+            EditListItem(Project.UserInterfaces.ToList(), DeviceType.UserInterface, UserInterfaceList.SelectedIndex, (Device)UserInterfaceList.SelectedItem);
+        }
+
+        private void OnDeleteUserInterfaceClicked(Object sender, RoutedEventArgs e) 
+        {
+            DeleteListItem(Project.UserInterfaces, DeviceType.UserInterface, UserInterfaceList.SelectedIndex);
+        }
+
+        private void OnClearSystemConfigurationClicked(object sender, RoutedEventArgs args)
+        {
+            MessageBoxResult result = MessageBox.Show("Are you sure you want to clear the ENTIRE configuration?", "Clear Configuration?", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (result == MessageBoxResult.Yes) //if this is confirmed, we reset the entire config.
+            {
+                Project.UserInterfaces.Clear();
+                Project.Sources.Clear();
+                Project.Destinations.Clear();
+                Project.ControlledDevices.Clear();
+
+                Project.VideoConferencing = false;
+                Project.AudioConferencing = false;
+                Project.SoftConferencing = false;
+                Project.RoomCombining = false;
+            }
+        }
+        */
+
+        /// <summary>
+        /// shows a message box asking for confirmation before deleting the selected device from the system configuration
+        /// </summary>
+        /// <param name="deviceType">the devices type</param>
+        /// <param name="device">the actual device object</param>
+        /// <returns>a messagebox result containing the user response</returns>
+        /*
+        private static MessageBoxResult ShowDeleteItemConfirmationMessage(DeviceType deviceType, Device device) {
+            string messageBoxText = $"Are you sure you want to delete the following {deviceType}?\r\n{device.Name} | {device.Capability}\r\nIN:{device.Input} / OUT: {device.Output}\r\n{device.ControlMethod}: {device.ControlMethodDescription}";
+            return MessageBox.Show(messageBoxText, $"Confirm Delete {deviceType}", MessageBoxButton.YesNo, MessageBoxImage.Question);
+        }
+        */
+
+        /// <summary>
+        /// an event handler called when the checkbox is clicked
+        /// </summary>
+        /// <param name="sender">the checkbox that sent the event handler</param>
+        /// <param name="e">the checkbox clicke event args</param>
+        private void OnAudioConferencingChecked(object sender, RoutedEventArgs e) {
+            bool? isChecked = ((System.Windows.Controls.CheckBox)sender).IsChecked;
+            if (isChecked != null) Project.AudioConferencing = (bool)isChecked;
+        }
+
+        /// <summary>
+        /// an event handler called when the checkbox is clicked
+        /// </summary>
+        /// <param name="sender">the checkbox that sent the event handler</param>
+        /// <param name="e">the checkbox clicke event args</param>
+        private void OnVideoConferencingChecked(object sender, RoutedEventArgs e)
+        {
+            bool? isChecked = ((System.Windows.Controls.CheckBox)sender).IsChecked;
+            if (isChecked != null) Project.VideoConferencing = (bool)isChecked;
+        }
+
+        /// <summary>
+        /// an event handler called when the checkbox is clicked
+        /// </summary>
+        /// <param name="sender">the checkbox that sent the event handler</param>
+        /// <param name="e">the checkbox clicke event args</param>
+        private void OnSoftConferencingChecked(object sender, RoutedEventArgs e)
+        {
+            bool? isChecked = ((System.Windows.Controls.CheckBox)sender).IsChecked;
+            if (isChecked != null) Project.SoftConferencing = (bool)isChecked;
+        }
+
+        /// <summary>
+        /// an event handler called when the checkbox is clicked
+        /// </summary>
+        /// <param name="sender">the checkbox that sent the event handler</param>
+        /// <param name="e">the checkbox clicke event args</param>
+        private void OnRoomCombiningChecked(object sender, RoutedEventArgs e)
+        {
+            bool? isChecked = ((System.Windows.Controls.CheckBox)sender).IsChecked;
+            if (isChecked != null) Project.RoomCombining = (bool)isChecked;
+        }
+
+        /// <summary>
+        /// toggles the visibility state of the manual system configuration pane
+        /// </summary>
+        /// <param name="sender">the object that called the event</param>
+        /// <param name="args">args containing data regarding the event</param>
+        private void OnToggleSystemConfigurationPanelClicked(object sender, RoutedEventArgs args)
+        {
+            ((Button)sender).Content = SystemConfiguration.Visibility == Visibility.Visible ? "Show System Configuration Panel" : "Hide System Configuration Panel";
+            SystemConfiguration.Visibility = SystemConfiguration.Visibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        /// <summary>
+        /// an event handler called when the parse system button is clicked
+        /// </summary>
+        /// <param name="sender">the object that called the event</param>
+        /// <param name="args">args containing data regarding the event</param>
+        private async void OnParseSystemDrawingsClicked(object sender, RoutedEventArgs args)
+        {
+            //ShowNotImplementedMessage();
+            Log.Information($"{Prefix} attempting to open file dialog for selection of dxf document");
+            var dialog = new Microsoft.Win32.OpenFileDialog();
+            dialog.DefaultExt = ".dxf"; // Default file extension
+            dialog.Filter = "System Drawing DXF Files (.dxf)|*.dxf"; // Filter files by extension
+
+            // Show open file dialog box
+            bool? open = dialog.ShowDialog();
+
+            // Process open file dialog box results
+            if (open == true)
+            {
+                Log.Information($"{Prefix} attempting to clear the current av system");
+                Project.Clear();
+
+                ((Button)sender).IsEnabled = false;
+                Log.Information($"{Prefix} attempting to create progress object to provide status of parsing dxf document @ {dialog.FileName}");
+                ProgressWindow window = new ProgressWindow(this, "Starting", $"Extracting commissionable devices from DXF drawing: {Path.GetFileName(dialog.FileName)}", "Parse DXF File");
+                Progress<ProgressUpdate> progress = new Progress<ProgressUpdate>(status => { window.UpdateProgress(status); });
+                window.Show();
+
+                DrawingParsedEventArgs result = await DrawingParser.ParseSystemDrawing(progress, dialog.FileName);
+
+                if (result.Success && result.System != null) { Project = result.System; }
+                
+                MessageBox.Show($"{result.Reason}", $"Operation {(result.Success ? "Success" : "Failure")}");
+                window.Close();
+                
+                ((Button)sender).IsEnabled = true;
+            }
+        }
+
+        /// <summary>
+        /// an event handler that is called when the parse drawing operation is completed
+        /// </summary>
+        /// <param name="sender">the object that called the event</param>
+        /// <param name="args">event args containing data regarding the parse operation</param>
+        private void OnParseSystemDrawingsCompleted(DrawingParsedEventArgs args)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                if (args.Success && args.System != null)
+                {
+                    args.System.CopyTo(Project);
+                    Log.Information($"{Prefix} successfully parsed dxf document!");
+                    MessageBox.Show("The CAD drawings were parsed, and an AV system has been created.\r\rYou may now save this configuration to a file for later use, or export the commissioning checklist immediately.", "Successfully Generated AV System!");
+                }
+                else {
+                    Log.Information($"{Prefix} failure to parse dxf document!");
+                    MessageBox.Show($"An error occurred parsing the system drawings. We were unable to generate an AV system object.\r\rReason: {args.Reason}", "Failed To Parse CAD Drawings"); 
+                }
+            });
+        }
+
+        /// <summary>
+        /// event handler thats triggered when import system from json is clicked. parses the json file and creates a system configuration from it
+        /// </summary>
+        /// <param name="sender">the sender of the event</param>
+        /// <param name="args">event args</param>
+        private void OnImportSystemConfigurationClicked(object sender, RoutedEventArgs args)
+        {
+            //open file dialog
+            //ShowNotImplementedMessage();
+            var dialog = new Microsoft.Win32.OpenFileDialog();
+            dialog.FileName = "config.json"; // Default file name
+            dialog.DefaultExt = ".json"; // Default file extension
+            dialog.Filter = "JSON Files (.json)|*.json"; // Filter files by extension
+
+            // Show open file dialog box
+            bool? result = dialog.ShowDialog();
+
+            // Process open file dialog box results
+            if (result == true)
+            {
+                // Open document
+                try
+                {
+                    StreamReader reader = new StreamReader(dialog.FileName);
+
+                    try
+                    {
+                        string fileContents = reader.ReadToEnd();
+
+                        if (fileContents != null)
+                        {
+                            //reset the entire project so that we dont add devices to an existing system
+                            Project.Clear();
+
+                            AVSystem.AVSystem? project = JsonConvert.DeserializeObject<AVSystem.AVSystem>(fileContents);
+
+                            if (project != null) {
+                                //copy read in data to this object
+                                project.CopyTo(Project);
+                                //re-subscribe to list
+                            }
+                            else {
+                                Log.Error($"{Prefix} failure to generate av system object from json file @ {dialog.FileName}");
+                                MessageBox.Show($"An error occured creating an AVSystem object to represent the configuration. Something must be wrong with the file.", "Failure Creating AVSystem"); 
+                            }
+                        }
+                        else {
+                            Log.Warning($"{Prefix} failure to read json file @ {dialog.FileName} -> file contents empty!");
+                            MessageBox.Show($"Unable to Parse Provided File:\r\r{dialog.FileName}\r\rFile Cannot Be Empty!!", "JSON File Empty"); 
+                        }
+                    }
+                    catch(Exception e) {
+                        Log.Error(e, $"{Prefix} failure to read json file @ {dialog.FileName}");
+                        MessageBox.Show(e.Message, $"Exception {e.Source}"); 
+                    }
+                    finally { 
+                        reader.Close(); 
+                        reader.Dispose(); 
+                    }
+                }
+                catch(Exception e) {
+                    Log.Error(e, $"{Prefix} failure to create stream reader for json file @ {dialog.FileName}");
+                    MessageBox.Show(e.Message, $"Exception {e.Source}"); 
+                }
+            }
+        }
+
+        /// <summary>
+        /// saves the generated checklist file to disk
+        /// </summary>
+        /// <param name="wb">the excel workbook that was generated</param>
+        private void SaveGeneratedChecklist(XLWorkbook wb)
+        {
+            var dialog = new Microsoft.Win32.SaveFileDialog();
+            dialog.FileName = "PR-X_CommissioningChecklist.xlsx"; // Default file name
+            dialog.DefaultExt = ".xlsx"; // Default file extension
+            dialog.Filter = "Excel FIles (.xlsx)|*.xlsx"; // Filter files by extension
+
+            // Show open file dialog box
+            bool? result = dialog.ShowDialog();
+
+            // Process open file dialog box results
+            if (result == true)
+            {
+                try { wb.SaveAs(dialog.FileName); }
+                catch (Exception e) {
+                    MessageBox.Show(e.Message, $"Error Saving Checklist");
+                    Log.Fatal(e, $"saving checklist to disk @ {dialog.FileName}"); 
+                }
+            }
+        }
+
+        /// <summary>
+        /// an event handler called when the export checklist button is clicked, causing a background worker to start
+        /// </summary>
+        /// <param name="sender">the object that called the event</param>
+        /// <param name="args">args that contain data related to the event handler</param>
+        private async void OnExportChecklistClicked(object sender, RoutedEventArgs args)
+        {
+            //need to update this to function with the new local database
+            ProgressWindow window = new ProgressWindow(this, "Generate Commissioning Tasks For Devices", "Generating Formatted Excel Comissioning Checklist", "Generate Checklist");
+            Progress<ProgressUpdate> progress = new Progress<ProgressUpdate>(status => { window.UpdateProgress(status); });
+            window.Show();
+            XLWorkbook? generationResult = await Generator.GenerateChecklist(progress, Project);
+            if (generationResult != null) { SaveGeneratedChecklist(generationResult); }
+            window.Close();
+        }
+
+        /// <summary>
+        /// an event handler called by the export system configuration button to save the configuration to a file for later use
+        /// </summary>
+        /// <param name="sender">the object that sent the event</param>
+        /// <param name="args">event args related to the sender and event</param>
+        private void OnExportSystemConfigurationClicked(object sender, RoutedEventArgs args)
+        {
+            var dialog = new Microsoft.Win32.SaveFileDialog();
+            dialog.FileName = "config.json"; // Default file name
+            dialog.DefaultExt = ".json"; // Default file extension
+            dialog.Filter = "JSON FIles (.json)|*.json"; // Filter files by extension
+
+            // Show open file dialog box
+            bool? result = dialog.ShowDialog();
+
+            // Process open file dialog box results
+            if (result == true)
+            {
+                // Open document
+                try
+                {
+                    StreamWriter writer = new StreamWriter(dialog.FileName);
+                    try
+                    {
+                        string json = JsonConvert.SerializeObject(Project, Newtonsoft.Json.Formatting.Indented);
+                        writer.Write(json);
+                    }
+                    catch (Exception e) {
+                        Log.Fatal(e, $"{Prefix} writing configuration to disk @ {dialog.FileName}");
+                        MessageBox.Show(e.Message, $"Exception {e.Source}"); 
+                    }
+                    finally { 
+                        writer.Close(); 
+                        writer.Dispose(); 
+                    }
+                }
+                catch (Exception e) {
+                    Log.Fatal(e, $"{Prefix} creating stream writer to facilitate configuration to disk @ {dialog.FileName}");
+                    MessageBox.Show(e.Message, $"Exception {e.Source}");
+                }
+            }
+        }
+    }
+}

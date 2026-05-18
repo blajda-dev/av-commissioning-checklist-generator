@@ -13,5 +13,6 @@ namespace CommissioningChecklistGenerator
     /// </summary>
     public partial class App : Application
     {
+        public static UI.MainWindow Window => (UI.MainWindow)Application.Current.MainWindow;
     }
 }

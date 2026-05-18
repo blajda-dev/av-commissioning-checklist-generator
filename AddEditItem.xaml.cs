@@ -8,9 +8,10 @@ namespace CommissioningChecklistGenerator
     /// </summary>
     public partial class AddEditItem : Window
     {
+        /*
         public AVSystem.Device thisDevice { get; set; }
 
-
+        
         public AddEditItem(AVSystem.DeviceType type)
         {
             InitializeComponent();
@@ -87,5 +88,6 @@ namespace CommissioningChecklistGenerator
         {
             DialogResult = true;
         }
+        */
     }
 }

@@ -1,0 +1,300 @@
+﻿<Window x:Name="Main" x:Class="CommissioningChecklistGenerator.UI.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:database="clr-namespace:CommissioningChecklistGenerator.Database"
+        mc:Ignorable="d"
+        Title="Commissioning Checklist Generator" MinHeight="550" MinWidth="310" SizeToContent="WidthAndHeight">
+    <Border Margin="5">
+        <Grid x:Name="MainGrid">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height=".25*"/>
+            <RowDefinition MinHeight="215" Height="1*"/>
+            <RowDefinition MaxHeight="75" Height="1.5*"/>
+            <RowDefinition Height="0*"/>
+            <RowDefinition MinHeight="75" Height="1*"/>
+            <RowDefinition MinHeight="75" Height="1*"/>
+        </Grid.RowDefinitions>
+        <DockPanel Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2">
+            <ToolBarTray DockPanel.Dock="Top">
+                <ToolBar>
+                        <Button ToolTip="open the help information window" Click="OnHelp" Content="Help"></Button>
+                        <Button ToolTip="edit application settings" Click="OnEditApplicationConfiguration" Content="Settings"/>
+                        <Button IsEnabled="{Binding Path=(database:Updater.IsIdle)}" ToolTip="manually update the device database" x:Name="DownloadDatabaseButton" Click="OnDownloadDatabase" Content="Download Database"/>
+                    </ToolBar>
+            </ToolBarTray>
+        </DockPanel>
+        <GroupBox x:Name="SystemFeatures" Grid.Column="0" Grid.Row="2" Grid.ColumnSpan="2" Header="Step 2 - Configure System Features">
+            <Grid x:Name="SystemFeatureGrid">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <CheckBox ToolTip="does the system support audio conferencing via POTS or VOIP?" IsChecked="{Binding Path=Project.AudioConferencing, Mode=TwoWay}" x:Name="AudioConferencing" Grid.Column="0" Grid.Row="0" Margin="5" Content="Audio Conferencing" Checked="OnAudioConferencingChecked"/>
+                <CheckBox ToolTip="does the system support video conferencing via VTC" IsChecked="{Binding Path=Project.VideoConferencing, Mode=TwoWay}" x:Name="VideoConferencing" Grid.Column="0" Grid.Row="1" Margin="5" Content="Video Conferencing" Checked="OnVideoConferencingChecked"/>
+                <CheckBox ToolTip="does the system support soft conferencing via BYOD or a dedicated PC?" IsChecked="{Binding Path=Project.SoftConferencing, Mode=TwoWay}" x:Name="SoftConferencing" Grid.Column="1" Grid.Row="0" Margin="5" Content="Soft Conferencing" Checked="OnSoftConferencingChecked"/>
+                <CheckBox ToolTip="does the system support room combining?" IsChecked="{Binding Path=Project.RoomCombining, Mode=TwoWay}" x:Name="RoomCombining" Grid.Column="1" Grid.Row="1" Margin="5" Content="Room Combining" Checked="OnRoomCombiningChecked"/>
+            </Grid>
+        </GroupBox>
+        <GroupBox x:Name="ImportOptions" Header="Step 1 - Import System Devices" Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="2">
+            <Grid x:Name="ImportOptionsGrid">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition MinHeight="20" Height="*"/>
+                    <RowDefinition MinHeight="30" Height="*"/>
+                    <RowDefinition MinHeight="20" Height="*"/>
+                </Grid.RowDefinitions>
+                <!--
+                <Button Visibility="Collapsed" x:Name="EditChecklistTasks" Margin="10" Grid.Column="0" Click="OnEditChecklistClicked">
+                    <TextBlock x:Name="EditChecklistTasksLabel" TextWrapping="Wrap" Text="Edit Custom Checklist Tasks"/>
+                </Button>
+                -->
+                <Button ToolTip="import a drawing set in DXF form to generate the checklist" x:Name="GenerateConfigurationFromDrawing" Margin="5" Grid.Column="0" Click="OnParseSystemDrawingsClicked" MaxWidth="300" MaxHeight="75">
+                    <TextBlock x:Name="GenerateConfigurationFromDrawingLabel" TextWrapping="Wrap" Padding="5">
+                        <TextBlock>
+                            Generate New System
+                            <LineBreak/>
+                            From CAD Drawings
+                        </TextBlock>
+                    </TextBlock>
+                </Button>
+                <Label Grid.Row="1" HorizontalAlignment="Center" FontSize="20" VerticalAlignment="Stretch" Height="40">
+                    OR
+                </Label>
+                <Button ToolTip="import an existing system configuration generated by this application and saved previously in json format" Grid.Row="2" x:Name="ImportSystemConfiguration" Margin="5" Grid.Column="1" Click="OnImportSystemConfigurationClicked" Padding="5" MaxWidth="300" MaxHeight="75">
+                    <TextBlock x:Name="ImportSystemConfigurationLabel" TextAlignment="Center"  TextWrapping="Wrap" Width="Auto">
+                        Import Existing 
+                        <LineBreak/>
+                        System File
+                    </TextBlock>
+                </Button>
+            </Grid>
+        </GroupBox>
+        <GroupBox Visibility="Collapsed" Header="Configurator Options" Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="2" MinHeight="75">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+                <!-- 
+                <Button Grid.Column="0" x:Name="ClearSystemConfiguration" Margin="5" Click="OnClearSystemConfigurationClicked" Content="Clear System Configuration"/>
+                <Button Grid.Column="1" x:Name="ViewDeviceConfigurationPanel" Margin="5" Click="OnToggleSystemConfigurationPanelClicked" Content="Show System Configuration Panel"/>
+                -->
+            </Grid>
+        </GroupBox>
+        <GroupBox x:Name="SystemConfiguration" Visibility="Collapsed" Header="Step 2.5 - Adjust System Devices [Optional]" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Grid.RowSpan="2">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition />
+                    <RowDefinition />
+                    <RowDefinition />
+                    <RowDefinition />
+                </Grid.RowDefinitions>
+                <GroupBox Header="Sources" x:Name="Sources" Grid.Row="1">
+                    <Grid x:Name="SourceGrid">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="4*"/>
+                            <RowDefinition MaxHeight="35" Height="1*"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition/>
+                            <ColumnDefinition/>
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
+                        <ListView HorizontalContentAlignment="Stretch" d:ItemsSource="{d:SampleData}" ItemsSource="{Binding Project.Sources}" Margin="1" x:Name="SourceList" Grid.ColumnSpan="3">
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Height="40">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition/>
+                                            <RowDefinition/>
+                                        </Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition/>
+                                            <ColumnDefinition/>
+                                            <ColumnDefinition/>
+                                            <ColumnDefinition/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Name:" Margin="2" Grid.Row="0" FontWeight="Bold"/>
+                                        <TextBlock Text="Input:" Margin="2"  Grid.Row="0" Grid.Column="2" FontWeight="Bold"/>
+                                        <TextBlock Text="Control Method:" Margin="2"  Grid.Row="1" FontWeight="Bold"/>
+                                        <TextBlock Text="Control Connector:" Margin="2"  Grid.Row="1" Grid.Column="2" FontWeight="Bold"/>
+                                        <TextBlock d:Text="Source Name" Grid.Column="1" Margin="2" Text="{Binding Name}"/>
+                                        <TextBlock d:Text="Network" Margin="2" Grid.Row="1" Grid.Column="1" Text="{Binding ControlMethod}"/>
+                                        <TextBlock d:Text="192.168.1.10"  Margin="2" Grid.Row="1" Grid.Column="3" Text="{Binding ControlMethodDescription}"/>
+                                        <TextBlock d:Text="HDMI_1" Margin="2" Grid.Row="0" Grid.Column="3" Text="{Binding Input}"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                        <!--
+                        <Button Margin="1" x:Name="AddSource" Content="Add Source" Grid.Row="1" Grid.Column="0" Click="OnAddSourceClicked"/>
+                        <Button Margin="1" x:Name="DeleteSource" Content="Delete Source" Grid.Row="1" Grid.Column="1" Click="OnDeleteSourceClicked"/>
+                        <Button Margin="1" x:Name="EditSource" Content="Edit Source" Grid.Row="1" Grid.Column="2" Click="OnEditSourceClicked"/>
+                        -->
+                    </Grid>
+                </GroupBox>
+                <GroupBox Header="Controlled Devices" x:Name="Devices" Grid.Row="1" Grid.Column="1">
+                    <Grid x:Name="DeviceGrid">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="4*"/>
+                            <RowDefinition MaxHeight="35" Height="1*"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition/>
+                            <ColumnDefinition/>
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
+                        <ListView HorizontalContentAlignment="Stretch" d:ItemsSource="{d:SampleData}" ItemsSource="{Binding Project.ControlledDevices}" Margin="1" x:Name="ControlledDeviceList" Grid.ColumnSpan="3">
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Height="40">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition/>
+                                            <RowDefinition/>
+                                        </Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition/>
+                                            <ColumnDefinition/>
+                                            <ColumnDefinition/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock TextWrapping="Wrap" Text="Name:" Margin="2" FontWeight="Bold"/>
+                                        <TextBlock TextWrapping="Wrap" Text="Control Method:" Margin="2" Grid.Column="1"  FontWeight="Bold"/>
+                                        <TextBlock TextWrapping="Wrap" Text="Control Connector:" Margin="2"  Grid.Column="2" FontWeight="Bold"/>
+                                        <TextBlock TextWrapping="Wrap" d:Text="Device Name" Margin="2" Grid.Row="1" Text="{Binding Name}"/>
+                                        <TextBlock TextWrapping="Wrap" d:Text="Network" Margin="2" Grid.Row="1" Grid.Column="1" Text="{Binding ControlMethod}"/>
+                                        <TextBlock TextWrapping="Wrap" d:Text="192.168.1.10"  Margin="2" Grid.Row="1"  Grid.Column="2" Text="{Binding ControlMethodDescription}"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                        <!--
+                        <Button Margin="1"  x:Name="AddDevice" Content="Add Device" Grid.Row="1" Grid.Column="0" Click="OnAddDeviceClicked"/>
+                        <Button Margin="1" x:Name="DeleteDevice" Content="Delete Device" Grid.Row="1" Grid.Column="1" Click="OnDeleteDeviceClicked"/>
+                        <Button Margin="1" x:Name="EditDevice" Content="Edit Device" Grid.Row="1" Grid.Column="2" Click="OnEditDeviceClicked"/>
+                        -->
+                    </Grid>
+                </GroupBox>
+                <GroupBox Header="Destinations" x:Name="Destinations" Grid.Column="0" Grid.Row="2">
+                    <Grid x:Name="DestinationGrid">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="4*"/>
+                            <RowDefinition MaxHeight="35" Height="1*"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition/>
+                            <ColumnDefinition/>
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
+                        <ListView HorizontalContentAlignment="Stretch" d:ItemsSource="{d:SampleData}" ItemsSource="{Binding Project.Destinations}" Margin="1" x:Name="DestinationList" Grid.ColumnSpan="3">
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Height="40">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition/>
+                                            <RowDefinition/>
+                                        </Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition/>
+                                            <ColumnDefinition/>
+                                            <ColumnDefinition/>
+                                            <ColumnDefinition/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Name:" Margin="2" Grid.Row="0" FontWeight="Bold"/>
+                                        <TextBlock Text="Output:" Margin="2"  Grid.Row="0" Grid.Column="2" FontWeight="Bold"/>
+                                        <TextBlock Text="Control Method:" Margin="2"  Grid.Row="1" FontWeight="Bold"/>
+                                        <TextBlock Text="Control Connector:" Margin="2"  Grid.Row="1" Grid.Column="2" FontWeight="Bold"/>
+                                        <TextBlock d:Text="Source Name" Grid.Column="1" Margin="2" Text="{Binding Name}"/>
+                                        <TextBlock d:Text="Network" Margin="2" Grid.Row="1" Grid.Column="1" Text="{Binding ControlMethod}"/>
+                                        <TextBlock d:Text="192.168.1.10"  Margin="2" Grid.Row="1" Grid.Column="3" Text="{Binding ControlMethodDescription}"/>
+                                        <TextBlock d:Text="HDMI_1" Margin="2" Grid.Row="0" Grid.Column="3" Text="{Binding Output}"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                        <!--
+                        <Button Margin="1" x:Name="AddDestination" Content="Add Destination" Grid.Row="1" Grid.Column="0" Click="OnAddDestinationClicked"/>
+                        <Button Margin="1" x:Name="DeleteDestination" Content="Delete Destination" Grid.Row="1" Grid.Column="1" Click="OnDeleteDestinationClicked"/>
+                        <Button Margin="1" x:Name="EditDestination" Content="Edit Destination" Grid.Row="1" Grid.Column="2" Click="OnEditDestinationClicked"/>
+                        -->
+                    </Grid>
+                </GroupBox>
+                <GroupBox Header="User Interfaces" x:Name="UserInterfaces" Grid.Row="2" Grid.Column="1">
+                    <Grid x:Name="UserInterfaceGrid">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="4*"/>
+                            <RowDefinition MaxHeight="35" Height="1*"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition/>
+                            <ColumnDefinition/>
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
+                        <ListView HorizontalContentAlignment="Stretch" d:ItemsSource="{d:SampleData}" ItemsSource="{Binding Project.UserInterfaces}" Margin="1" x:Name="UserInterfaceList" Grid.ColumnSpan="3">
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Height="40">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition/>
+                                            <RowDefinition/>
+                                        </Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition/>
+                                            <ColumnDefinition/>
+                                            <ColumnDefinition/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock TextWrapping="Wrap" Text="Name:" Margin="2" FontWeight="Bold"/>
+                                        <TextBlock TextWrapping="Wrap" Text="Control Method:" Margin="2" Grid.Column="1"  FontWeight="Bold"/>
+                                        <TextBlock TextWrapping="Wrap" Text="Control Connector:" Margin="2"  Grid.Column="2" FontWeight="Bold"/>
+                                        <TextBlock TextWrapping="Wrap" d:Text="Device Name" Margin="2" Grid.Row="1" Text="{Binding Name}"/>
+                                        <TextBlock TextWrapping="Wrap" d:Text="Network" Margin="2" Grid.Row="1" Grid.Column="1" Text="{Binding ControlMethod}"/>
+                                        <TextBlock TextWrapping="Wrap" d:Text="192.168.1.10"  Margin="2" Grid.Row="1"  Grid.Column="2" Text="{Binding ControlMethodDescription}"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                        <!--
+                        <Button Margin="1" x:Name="AddUserInterface" Content="Add User Interface" Grid.Row="1" Grid.Column="0" Click="OnAddUserInterfaceClicked"/>
+                        <Button Margin="1" x:Name="DeleteUserInterface" Content="Delete User Interface" Grid.Row="1" Grid.Column="1" Click="OnDeleteUserInterfaceClicked"/>
+                        <Button Margin="1" x:Name="EditUserInterface" Content="Edit User Interface" Grid.Row="1" Grid.Column="2" Click="OnEditUserInterfaceClicked"/>
+                        -->
+                    </Grid>
+                </GroupBox>
+            </Grid>
+        </GroupBox>
+        <GroupBox Header="Step 3 - Save Configuration" Grid.Column="0" Grid.Row="4" Grid.ColumnSpan="2" MinHeight="65">
+            <Button ToolTip="save this system configuration to disk in json format, for quicker re-use at later date" x:Name="ExportSystemConfiguration" Grid.Column="0" Margin="5" Click="OnExportSystemConfigurationClicked" MaxWidth="300" MaxHeight="50">
+                <TextBlock x:Name="ExportSystemConfigurationLabel" TextWrapping="Wrap" TextAlignment="Center">
+                            Export System
+                            <LineBreak/>
+                            To File
+                </TextBlock>
+            </Button>
+        </GroupBox>
+        <GroupBox Header="Step 4 - Output Commissioning Checklist" Grid.Row="5" MinHeight="65" Grid.ColumnSpan="2">
+            <Button ToolTip="generate the excel checklist for the quality assurance engineer or field engineer" x:Name="ExportChecklist" Grid.Column="1" Margin="5" Click="OnExportChecklistClicked" MaxWidth="300" MaxHeight="50">
+                <TextBlock>
+                    Export Excel
+                    <LineBreak/>
+                    Commissioning Checklist
+                </TextBlock>
+            </Button>
+        </GroupBox>
+    </Grid>
+    </Border>
+</Window>

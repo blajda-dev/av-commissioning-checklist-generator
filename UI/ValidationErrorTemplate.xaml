@@ -1,0 +1,23 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:CommissioningChecklistGenerator.Converters">
+
+    <local:ErrorConverter x:Key="ErrorConverter"/>
+
+    <ControlTemplate x:Key="SimpleErrorTemplate">
+        <StackPanel>
+            <Border BorderBrush="Red" BorderThickness="1" CornerRadius="2">
+                <AdornedElementPlaceholder x:Name="ValidatedTextBox"/>
+            </Border>
+            
+            <TextBlock Text="{Binding ElementName=ValidatedTextBox, Path=AdornedElement.(Validation.Errors), Converter={StaticResource ErrorConverter}}" Foreground="Red" FontSize="10" Margin="0,2,0,0"/>
+        </StackPanel>
+    </ControlTemplate>
+
+    <Style x:Key="ValidatedTextBox" TargetType="TextBox">
+        <Setter Property="Validation.ErrorTemplate" Value="{StaticResource SimpleErrorTemplate}"/>
+        <Style.Triggers>
+            <Trigger Property="Validation.HasError" Value="True">
+                <Setter Property="ToolTip" Value="{Binding RelativeSource={RelativeSource Self}, Path=(Validation.Errors), Converter={StaticResource ErrorConverter}}"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+</ResourceDictionary>

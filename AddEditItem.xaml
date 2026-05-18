@@ -27,9 +27,11 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 
+                <!-- 
                 <RadioButton Checked="OnAudioVideoIsChecked" x:Name="AudioVideo" HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Column="0" Content="Audio/Video"/>
                 <RadioButton Checked="OnAudioIsChecked" x:Name="Audio" HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Column="1" Content="Audio"/>
                 <RadioButton Checked="OnVideoIsChecked" x:Name="Video" HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Column="2" Content="Video"/>
+                -->
             </Grid>
         </GroupBox>
         <GroupBox x:Name="ControlType" Grid.Column="1" Header="Control Type">
@@ -43,9 +45,11 @@
                     <ColumnDefinition/>
                     <ColumnDefinition/>
                 </Grid.ColumnDefinitions>
+                <!--
                 <ComboBox ItemsSource="{Binding Source={extension:EnumerationExtension {x:Type av:ControlType}}}" SelectedItem="{Binding thisDevice.ControlMethod}" Margin="0, 2" x:Name="ControlTypeSelector" Grid.ColumnSpan="3"/>
                 <TextBlock TextWrapping="Wrap" x:Name="ControlConnectorLabel" TextAlignment="Center" VerticalAlignment="Center" Grid.Row="1" Text="Control Connector:"/>
                 <TextBox Text="{Binding thisDevice.ControlMethodDescription}"  x:Name="ControlConnector" Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"/>
+                -->
             </Grid>
         </GroupBox>
         <GroupBox x:Name="Details" Grid.Row="1" Grid.ColumnSpan="2" Grid.RowSpan="2"  Header="Details">
@@ -68,6 +72,6 @@
                 <TextBox Text="{Binding thisDevice.Output}" x:Name="Output" Margin="2" Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"/>
             </Grid>
         </GroupBox>
-        <Button x:Name="Complete" Grid.Row="3" Grid.Column="1" Margin="5" Content="Add/Edit Source" Click="OnAddEditCompleted"/>
+        <!-- <Button x:Name="Complete" Grid.Row="3" Grid.Column="1" Margin="5" Content="Add/Edit Source" Click="OnAddEditCompleted"/> -->
     </Grid>
 </Window>

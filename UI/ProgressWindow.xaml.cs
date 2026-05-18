@@ -1,4 +1,5 @@
 ﻿using CommissioningChecklistGenerator;
+using CommissioningChecklistGenerator.UI;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -22,35 +23,30 @@ namespace CommissioningChecklistGenerator
     /// </summary>
     public partial class ProgressWindow : Window
     {
-        public ProgressWindow()
+        public ProgressWindow(Window owner)
         {
             InitializeComponent();
-            CurrentTask.Text = "Beginning Checklist Export";
+            this.Owner = owner;
+            WindowStartupLocation = WindowStartupLocation.CenterOwner;
         }
 
-        public ProgressWindow(string task) : this()
+        public ProgressWindow(Window owner, string task, string message, string title) : this(owner)
         {
+            MessageMain.Text = message;
+            Title = title;
             CurrentTask.Text = task;
+            CurrentProgress.Value = 0;
         }
 
         public void UpdateProgress(int currentProgress, string currentTask)
         {
-            CurrentProgress.Dispatcher.BeginInvoke(DispatcherPriority.Normal,
-            new DispatcherOperationCallback(delegate
-            {
-                CurrentProgress.Value = currentProgress;
-                CurrentTask.Text = currentTask;
-                return null;
-            }), null);
+            CurrentProgress.Value = currentProgress;
+            CurrentTask.Text = currentTask;
         }
-        public void IncrementProgress()
+
+        public void UpdateProgress(ProgressUpdate update)
         {
-            CurrentProgress.Dispatcher.BeginInvoke(DispatcherPriority.Normal,
-            new DispatcherOperationCallback(delegate
-            {
-                CurrentProgress.Value = CurrentProgress.Value + 10;
-                return null;
-            }), null);
+            this.UpdateProgress(update.Percent, update.Message);
         }
     }
 }
