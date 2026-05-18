@@ -1,7 +1,7 @@
-﻿using CommissioningChecklistGenerator.AVSystem;
+﻿using CommissioningChecklistGenerator.ProjectModel;
 using System.Windows;
 
-namespace CommissioningChecklistGenerator
+namespace CommissioningChecklistGenerator.UI
 {
     /// <summary>
     /// Interaction logic for AddEditItem.xaml

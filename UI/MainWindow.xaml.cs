@@ -2,7 +2,7 @@
 using System.Windows;
 using System.Linq;
 using System.ComponentModel;
-using CommissioningChecklistGenerator.AVSystem;
+using CommissioningChecklistGenerator.ProjectModel;
 using System.IO;
 using Newtonsoft.Json;
 using System.Collections.Generic;
@@ -25,22 +25,23 @@ namespace CommissioningChecklistGenerator.UI
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : System.Windows.Window
+    public partial class MainWindow : Window
     {
         private const string Prefix = "[App]";
-        public AVSystem.AVSystem Project { get; set; }
+        public AVSystem Project { get; set; }
 
         public MainWindow()
         {
             ConfigureLogging();
             Log.Debug($"{Prefix} create new av system");
-            Project = new AVSystem.AVSystem();
+            Project = new AVSystem();
             Log.Debug($"{Prefix} set data context");
             DataContext = this;
             Log.Debug($"{Prefix} subscribe to window initialized event");
             this.ContentRendered += OnShown;
             Log.Debug($"{Prefix} initialize window");
             InitializeComponent();
+            this.WindowStartupLocation = WindowStartupLocation.CenterScreen;
 
             /*
             //hide edit buttons by default
@@ -122,13 +123,11 @@ namespace CommissioningChecklistGenerator.UI
         private void OnHelp(object sender, RoutedEventArgs e)
         {
             MessageBox.Show("""
-                This generator will use a sql database to generate a commissioning checklist for an AV system.
+                This generator will use a remotely hosted Sqlite database to generate a commissioning checklist for a provided AV system.
                 
-                You need to provide it a DXF drawing of the AV system; ideally provided by the project engineer. This can also be done by droppping the drawing .DWG file into a converter online, and it will spit it out for you. 
-                
-                As long as your drawing uses the standard block and prefix system, the database will know how to retrieve tasks for any device present in the system that has been determined as "commissionable."
+                You need to provide the application a DXF or DWG drawing, and it will be automatically parsed. As long as your drawing uses the standard block and prefix system (see the engineering team standards handbook), the database will know how to retrieve tasks for any device present in the system that has been determined as "commissionable."
 
-                The database will automatically be downloaded every time you start up the application, and once every hour while it is running. To adjust the location of the database, use the open the settings.
+                The database will automatically be downloaded every time you start up the application, and once every hour while it is running. To adjust the server hosting the database, open the settings window; your changes will be written to disk.
                 """, "Help");
         }
 
@@ -166,7 +165,7 @@ namespace CommissioningChecklistGenerator.UI
         /// <param name="e">the details of the change</param>
         private void OnListSizeChanged(object? sender, ListChangedEventArgs e) {
             if (sender != null) {
-                if (((BindingList<AVSystem.Device>)sender).Count == 0) {
+                if (((BindingList<Device>)sender).Count == 0) {
                     /*
                     if (SourceList.Items.Count == 0) { 
                         EditSource.Visibility = Visibility.Hidden;
@@ -354,7 +353,7 @@ namespace CommissioningChecklistGenerator.UI
         /// <param name="sender">the checkbox that sent the event handler</param>
         /// <param name="e">the checkbox clicke event args</param>
         private void OnAudioConferencingChecked(object sender, RoutedEventArgs e) {
-            bool? isChecked = ((System.Windows.Controls.CheckBox)sender).IsChecked;
+            bool? isChecked = ((global::System.Windows.Controls.CheckBox)sender).IsChecked;
             if (isChecked != null) Project.AudioConferencing = (bool)isChecked;
         }
 
@@ -365,7 +364,7 @@ namespace CommissioningChecklistGenerator.UI
         /// <param name="e">the checkbox clicke event args</param>
         private void OnVideoConferencingChecked(object sender, RoutedEventArgs e)
         {
-            bool? isChecked = ((System.Windows.Controls.CheckBox)sender).IsChecked;
+            bool? isChecked = ((global::System.Windows.Controls.CheckBox)sender).IsChecked;
             if (isChecked != null) Project.VideoConferencing = (bool)isChecked;
         }
 
@@ -376,7 +375,7 @@ namespace CommissioningChecklistGenerator.UI
         /// <param name="e">the checkbox clicke event args</param>
         private void OnSoftConferencingChecked(object sender, RoutedEventArgs e)
         {
-            bool? isChecked = ((System.Windows.Controls.CheckBox)sender).IsChecked;
+            bool? isChecked = ((global::System.Windows.Controls.CheckBox)sender).IsChecked;
             if (isChecked != null) Project.SoftConferencing = (bool)isChecked;
         }
 
@@ -387,7 +386,7 @@ namespace CommissioningChecklistGenerator.UI
         /// <param name="e">the checkbox clicke event args</param>
         private void OnRoomCombiningChecked(object sender, RoutedEventArgs e)
         {
-            bool? isChecked = ((System.Windows.Controls.CheckBox)sender).IsChecked;
+            bool? isChecked = ((global::System.Windows.Controls.CheckBox)sender).IsChecked;
             if (isChecked != null) Project.RoomCombining = (bool)isChecked;
         }
 
@@ -409,11 +408,11 @@ namespace CommissioningChecklistGenerator.UI
         /// <param name="args">args containing data regarding the event</param>
         private async void OnParseSystemDrawingsClicked(object sender, RoutedEventArgs args)
         {
-            //ShowNotImplementedMessage();
+            ((Button)sender).IsEnabled = false;
             Log.Information($"{Prefix} attempting to open file dialog for selection of dxf document");
             var dialog = new Microsoft.Win32.OpenFileDialog();
             dialog.DefaultExt = ".dxf"; // Default file extension
-            dialog.Filter = "System Drawing DXF Files (.dxf)|*.dxf"; // Filter files by extension
+            dialog.Filter = "AutoCAD Files (*.dwg,*.dxf)|*.dwg;*.dxf|AutoCAD DWG Files (*.dwg)|*.dwg|AutoCAD DXF Files (*.dxf)|*.dxf|All Files (*.*)|*.*"; // Filter files by extension
 
             // Show open file dialog box
             bool? open = dialog.ShowDialog();
@@ -424,7 +423,6 @@ namespace CommissioningChecklistGenerator.UI
                 Log.Information($"{Prefix} attempting to clear the current av system");
                 Project.Clear();
 
-                ((Button)sender).IsEnabled = false;
                 Log.Information($"{Prefix} attempting to create progress object to provide status of parsing dxf document @ {dialog.FileName}");
                 ProgressWindow window = new ProgressWindow(this, "Starting", $"Extracting commissionable devices from DXF drawing: {Path.GetFileName(dialog.FileName)}", "Parse DXF File");
                 Progress<ProgressUpdate> progress = new Progress<ProgressUpdate>(status => { window.UpdateProgress(status); });
@@ -436,9 +434,8 @@ namespace CommissioningChecklistGenerator.UI
                 
                 MessageBox.Show($"{result.Reason}", $"Operation {(result.Success ? "Success" : "Failure")}");
                 window.Close();
-                
-                ((Button)sender).IsEnabled = true;
             }
+            ((Button)sender).IsEnabled = true;
         }
 
         /// <summary>
@@ -470,6 +467,7 @@ namespace CommissioningChecklistGenerator.UI
         /// <param name="args">event args</param>
         private void OnImportSystemConfigurationClicked(object sender, RoutedEventArgs args)
         {
+            ((Button)sender).IsEnabled = false;
             //open file dialog
             //ShowNotImplementedMessage();
             var dialog = new Microsoft.Win32.OpenFileDialog();
@@ -497,7 +495,7 @@ namespace CommissioningChecklistGenerator.UI
                             //reset the entire project so that we dont add devices to an existing system
                             Project.Clear();
 
-                            AVSystem.AVSystem? project = JsonConvert.DeserializeObject<AVSystem.AVSystem>(fileContents);
+                            AVSystem? project = JsonConvert.DeserializeObject<AVSystem>(fileContents);
 
                             if (project != null) {
                                 //copy read in data to this object
@@ -528,6 +526,8 @@ namespace CommissioningChecklistGenerator.UI
                     MessageBox.Show(e.Message, $"Exception {e.Source}"); 
                 }
             }
+            
+            ((Button)sender).IsEnabled = true;
         }
 
         /// <summary>
@@ -536,21 +536,32 @@ namespace CommissioningChecklistGenerator.UI
         /// <param name="wb">the excel workbook that was generated</param>
         private void SaveGeneratedChecklist(XLWorkbook wb)
         {
-            var dialog = new Microsoft.Win32.SaveFileDialog();
-            dialog.FileName = "PR-X_CommissioningChecklist.xlsx"; // Default file name
-            dialog.DefaultExt = ".xlsx"; // Default file extension
-            dialog.Filter = "Excel FIles (.xlsx)|*.xlsx"; // Filter files by extension
-
-            // Show open file dialog box
-            bool? result = dialog.ShowDialog();
-
-            // Process open file dialog box results
-            if (result == true)
+            if (wb.Worksheets.Count == 0)
             {
-                try { wb.SaveAs(dialog.FileName); }
-                catch (Exception e) {
-                    MessageBox.Show(e.Message, $"Error Saving Checklist");
-                    Log.Fatal(e, $"saving checklist to disk @ {dialog.FileName}"); 
+                MessageBox.Show("An error has occurred while attempting to generate the checklist, resulting in no worksheets being generated. The database connection must not truly be open.", "Cannot Save Chechlist");
+            }
+            else
+            {
+                var dialog = new Microsoft.Win32.SaveFileDialog();
+                dialog.FileName = "PR-X_CommissioningChecklist.xlsx"; // Default file name
+                dialog.DefaultExt = ".xlsx"; // Default file extension
+                dialog.Filter = "Excel FIles (.xlsx)|*.xlsx"; // Filter files by extension
+
+                // Show open file dialog box
+                bool? result = dialog.ShowDialog();
+
+                // Process open file dialog box results
+                if (result == true)
+                {
+                    try { 
+                        wb.SaveAs(dialog.FileName);
+                        Log.Information($"{Prefix} exported excel checklist to disk @ {dialog.FileName}");
+                    }
+                    catch (Exception e)
+                    {
+                        MessageBox.Show(e.Message, $"Exception Encountered: Saving Checklist");
+                        Log.Error(e, $"{Prefix} saving checklist to disk @ {dialog.FileName}");
+                    }
                 }
             }
         }
@@ -562,6 +573,7 @@ namespace CommissioningChecklistGenerator.UI
         /// <param name="args">args that contain data related to the event handler</param>
         private async void OnExportChecklistClicked(object sender, RoutedEventArgs args)
         {
+            ((Button)sender).IsEnabled = false;
             //need to update this to function with the new local database
             ProgressWindow window = new ProgressWindow(this, "Generate Commissioning Tasks For Devices", "Generating Formatted Excel Comissioning Checklist", "Generate Checklist");
             Progress<ProgressUpdate> progress = new Progress<ProgressUpdate>(status => { window.UpdateProgress(status); });
@@ -569,6 +581,7 @@ namespace CommissioningChecklistGenerator.UI
             XLWorkbook? generationResult = await Generator.GenerateChecklist(progress, Project);
             if (generationResult != null) { SaveGeneratedChecklist(generationResult); }
             window.Close();
+            ((Button)sender).IsEnabled = true;
         }
 
         /// <summary>
@@ -578,6 +591,7 @@ namespace CommissioningChecklistGenerator.UI
         /// <param name="args">event args related to the sender and event</param>
         private void OnExportSystemConfigurationClicked(object sender, RoutedEventArgs args)
         {
+            ((Button)sender).IsEnabled = false;
             var dialog = new Microsoft.Win32.SaveFileDialog();
             dialog.FileName = "config.json"; // Default file name
             dialog.DefaultExt = ".json"; // Default file extension
@@ -597,9 +611,10 @@ namespace CommissioningChecklistGenerator.UI
                     {
                         string json = JsonConvert.SerializeObject(Project, Newtonsoft.Json.Formatting.Indented);
                         writer.Write(json);
+                        Log.Information($"{Prefix} exported system config to disk @ {dialog.FileName}");
                     }
                     catch (Exception e) {
-                        Log.Fatal(e, $"{Prefix} writing configuration to disk @ {dialog.FileName}");
+                        Log.Error(e, $"{Prefix} writing configuration to disk @ {dialog.FileName}");
                         MessageBox.Show(e.Message, $"Exception {e.Source}"); 
                     }
                     finally { 
@@ -608,10 +623,11 @@ namespace CommissioningChecklistGenerator.UI
                     }
                 }
                 catch (Exception e) {
-                    Log.Fatal(e, $"{Prefix} creating stream writer to facilitate configuration to disk @ {dialog.FileName}");
+                    Log.Error(e, $"{Prefix} creating stream writer to facilitate configuration to disk @ {dialog.FileName}");
                     MessageBox.Show(e.Message, $"Exception {e.Source}");
                 }
             }
+            ((Button)sender).IsEnabled = true;
         }
     }
 }

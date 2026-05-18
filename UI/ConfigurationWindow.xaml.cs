@@ -2,7 +2,6 @@
 using System.Windows;
 using System.Linq;
 using System.ComponentModel;
-using CommissioningChecklistGenerator.AVSystem;
 using System.IO;
 using Newtonsoft.Json;
 using System.Collections.Generic;
@@ -20,7 +19,7 @@ using System.Security.Policy;
 using DocumentFormat.OpenXml.Presentation;
 using System.Windows.Navigation;
 
-namespace CommissioningChecklistGenerator
+namespace CommissioningChecklistGenerator.UI
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
