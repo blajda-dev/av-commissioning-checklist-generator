@@ -362,3 +362,9 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 /Database/local.db
+/Drawings/250388CD2-AVC-A.dwg
+/Drawings/50180982-AV-4.00 to AV-4.xx.dwg
+/Drawings/drawing_1.dxf
+/Drawings/drawing_2.dxf
+/Drawings/dump.json
+/Drawings/dwg.py
