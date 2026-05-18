@@ -5,7 +5,7 @@ namespace CommissioningChecklistGenerator.Extensions
 {
     public class EnumerationExtension : MarkupExtension
     {
-        private Type _enumType;
+        private Type _enumType = typeof(Enum);
         public Type EnumType
         {
             get { return _enumType; }
@@ -18,9 +18,8 @@ namespace CommissioningChecklistGenerator.Extensions
                         Type enumType = Nullable.GetUnderlyingType(value) ?? value;
                         if (!enumType.IsEnum)
                             throw new ArgumentException("Type must be for an Enum.");
+                        _enumType = value;
                     }
-
-                    _enumType = value;
                 }
             }
         }
