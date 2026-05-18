@@ -1,4 +1,4 @@
-﻿using CommissioningChecklistGenerator.AVSystem;
+﻿using CommissioningChecklistGenerator.ProjectModel;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,6 +15,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using CommissioningChecklistGenerator.UI;
+using CommissioningChecklistGenerator.Database;
 
 namespace CommissioningChecklistGenerator.Checklist
 {
@@ -153,52 +154,59 @@ namespace CommissioningChecklistGenerator.Checklist
         /// <param name="worker">the background worker that is handling the process</param>
         /// <param name="project">the avsystem project that we are generating the checklist for</param>
         /// <returns>an excel workbook</returns>
-        public static async Task<XLWorkbook?> GenerateChecklist(IProgress<ProgressUpdate> reporter, AVSystem.AVSystem project)
+        public static async Task<XLWorkbook?> GenerateChecklist(IProgress<ProgressUpdate> reporter, AVSystem project)
         {
             _idle.TrySetResult(false);
 
-            XLWorkbook? workbook = await Task.Run(() =>
+            XLWorkbook? workbook = await Task.Run(async () =>
             {
                 XLWorkbook? workbook = null;
-                try
-                {
-                    //try to create a new workbook
-                    workbook = new XLWorkbook();
-                    progress += 5;
-                    reporter.Report(new ProgressUpdate(progress, "Workbook Created..."));
-                }
-                catch (Exception e) { MessageBox.Show(e.Message); }
-                finally
-                {
-                    //show busy dialog
-                    if (workbook != null)
+                bool result = await Querier.GetDatabaseConnectionState();
+                if (result)
+                { 
+                    try
                     {
-                        //if we succeed at getting system tasks
-                        if (project.GetCommissioningTasks())
-                        {
-                            Log.Information($"{Prefix} retrieved device commissioning tasks");
-
-                            GenerateWorksheetChecklistForDevices(reporter, project.Sources.ToList(), workbook, "Sources");
-
-                            GenerateWorksheetChecklistForDevices(reporter, project.Destinations.ToList(), workbook, "Destinations");
-
-                            GenerateWorksheetChecklistForDevices(reporter, project.UserInterfaces.ToList(), workbook, "User Interfaces");
-
-                            GenerateWorksheetChecklistForDevices(reporter, project.ControlledDevices.ToList(), workbook, "Controlled Devices");
-                        }
-
-                        //system type tasks
-                        project.GetSystemCommissioningTasks()?.ToList()?.ForEach(kvp =>
-                        {
-                            Log.Debug($"{Prefix} generate task list for {kvp.Key} -> {kvp.Value.Count} tasks");
-                            GenerateTaskChecklist(reporter, kvp.Value, workbook, kvp.Key);
-                        });
-
-                        FormatWorkbook(workbook);
+                        //try to create a new workbook
+                        workbook = new XLWorkbook();
+                        progress += 5;
+                        reporter.Report(new ProgressUpdate(progress, "Workbook Created..."));
                     }
+                    catch (Exception e) { MessageBox.Show(e.Message); }
+                    finally
+                    {
+                        //show busy dialog
+                        if (workbook != null)
+                        {
+                            //if we succeed at getting system tasks
+                            if (project.GetCommissioningTasks())
+                            {
+                                GenerateWorksheetChecklistForDevices(reporter, project.Sources.ToList(), workbook, "Sources");
+
+                                GenerateWorksheetChecklistForDevices(reporter, project.Destinations.ToList(), workbook, "Destinations");
+
+                                GenerateWorksheetChecklistForDevices(reporter, project.UserInterfaces.ToList(), workbook, "User Interfaces");
+
+                                GenerateWorksheetChecklistForDevices(reporter, project.ControlledDevices.ToList(), workbook, "Controlled Devices");
+                            }
+
+                            //system type tasks
+                            project.GetSystemCommissioningTasks()?.ToList()?.ForEach(kvp =>
+                            {
+                                Log.Debug($"{Prefix} generate task list for {kvp.Key} -> {kvp.Value.Count} tasks");
+                                GenerateTaskChecklist(reporter, kvp.Value, workbook, kvp.Key);
+                            });
+
+                            FormatWorkbook(workbook);
+                        }
+                    }
+
+                    reporter.Report(new ProgressUpdate(progress, "Generated Commissioning Checklist"));
+                    Log.Information($"{Prefix} generated comissioning checklist");
                 }
-                reporter.Report(new ProgressUpdate(progress, "Generated Commissioning Checklist"));
+                else { Log.Fatal($"{Prefix} cannot generate checklist because database is not available!"); }
+                
                 _idle.TrySetResult(true);
+                
                 return workbook;
             });
 
