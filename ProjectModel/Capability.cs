@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CommissioningChecklistGenerator.AVSystem
+namespace CommissioningChecklistGenerator.ProjectModel
 {
     public enum Capability : Int64
     {

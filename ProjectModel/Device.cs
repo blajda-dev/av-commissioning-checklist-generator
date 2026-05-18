@@ -7,7 +7,7 @@ using CommissioningChecklistGenerator.Checklist;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
-namespace CommissioningChecklistGenerator.AVSystem
+namespace CommissioningChecklistGenerator.ProjectModel
 {
     public class Device : INotifyPropertyChanged
     {

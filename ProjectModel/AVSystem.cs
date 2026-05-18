@@ -13,7 +13,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Bson;
 using Serilog;
 
-namespace CommissioningChecklistGenerator.AVSystem
+namespace CommissioningChecklistGenerator.ProjectModel
 {
     public class AVSystem : INotifyPropertyChanged
     {
@@ -214,7 +214,7 @@ namespace CommissioningChecklistGenerator.AVSystem
                         }
                     }
                     //ignore
-                    else { Log.Information($"{Prefix} device: {d.Name} -> {d.Manufacturer} : {d.Model} : {d.Description} | there are no commissionable tasks for this device!"); }
+                    else { Log.Warning($"{Prefix} device: {d.Name} -> {d.Manufacturer} : {d.Model} : {d.Description} | there are no commissionable tasks for this device!"); }
 
                     #if DEBUG
                     //print capabilities
@@ -224,6 +224,9 @@ namespace CommissioningChecklistGenerator.AVSystem
                     tasks.ForEach(t => Log.Debug($"{Prefix} {t.Name} -> {t.Description}"));
                     #endif
                 });
+
+                Log.Information($"{Prefix} retrieved all device commissioning tasks");
+
                 result = true;
             }
             catch (Exception e) { Log.Error(e, $"{Prefix} could not get commissoning tasks for device!"); }
