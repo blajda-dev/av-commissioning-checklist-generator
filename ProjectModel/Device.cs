@@ -47,7 +47,7 @@ namespace CommissioningChecklistGenerator.ProjectModel
         [JsonProperty("model", NullValueHandling = NullValueHandling.Ignore)]
         public string Model { get { return _model; } set { _model = value.Trim().ToUpper(); OnPropertyChanged("Model"); } }
 
-        string _description = DefaultDeviceManufacturer;
+        string _description = String.Empty;
         [JsonProperty("description", NullValueHandling = NullValueHandling.Ignore)]
         public string Description { get { return _description; } set { _description = value.Trim().ToUpper(); OnPropertyChanged("Description"); } }
 
