@@ -3,15 +3,20 @@ using Serilog;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Security.Policy;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
-namespace CommissioningChecklistGenerator
+namespace CommissioningChecklistGenerator.Application
 {
     public class Configuration : IDataErrorInfo, INotifyPropertyChanged
     {
+        private static readonly string ConfigurationLocation = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), Constants.ApplicationName, Constants.ConfigurationFileName);
+        private static readonly string ConfigurationTemporaryLocation = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), Constants.ApplicationName, String.Format("{0}.tmp", Constants.ConfigurationFileName));
+
         public static Configuration ApplicationConfiguration { get; private set; }
 
         static Configuration()
@@ -29,6 +34,7 @@ namespace CommissioningChecklistGenerator
 
         [JsonIgnore]
         private string _serverURL = String.Empty;
+        
         [JsonProperty("url")]
         public string ServerURL
         {
@@ -41,16 +47,45 @@ namespace CommissioningChecklistGenerator
                     _serverURL = value;
                     if (ValidateServerURL(_serverURL) == String.Empty) {
                         if (previous != _serverURL) { Log.Information($"{Prefix} configured server url changed -> {_serverURL}"); }
-                        this.ServerURLValid = true; 
+                        this.ServerURLValid = true;
                     }
                     else {
                         Log.Warning($"{Prefix} configured server url is invalid -> {_serverURL}");
-                        this.ServerURLValid = false; 
+                        this.ServerURLValid = false;
                     }
                     OnPropertyChanged(nameof(ServerURL));
                 }
             }
         }
+
+        [JsonIgnore] 
+        private string _authenticationUrl = String.Empty;
+        
+        [JsonProperty("authenticator_url")]
+        public string AuthenticationURL
+        {
+            get { return _authenticationUrl; }
+            set
+            {
+                if (value != null && value != String.Empty)
+                {
+                    string previous = _authenticationUrl;
+                    _authenticationUrl = value;
+                    if (ValidateServerURL(_authenticationUrl) == String.Empty)
+                    {
+                        if (previous != _authenticationUrl) { Log.Information($"{Prefix} configured server url changed -> {_authenticationUrl}"); }
+                    }
+                    else
+                    {
+                        Log.Warning($"{Prefix} configured server url is invalid -> {_authenticationUrl}");
+                    }
+                    OnPropertyChanged(nameof(AuthenticationURL));
+                }
+            }
+        }
+
+        [JsonProperty("client_id")]
+        public string ClientID { get; set; } = String.Empty;
 
         public string this[string columnName]
         {
@@ -79,13 +114,102 @@ namespace CommissioningChecklistGenerator
             {
                 if (uri != null)
                 {
-                    if (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps) { valid = true; }
+                    if (uri.Scheme == Uri.UriSchemeHttps) { valid = true; }
                 }
             }
 
-            if (!valid) { result = "please provide a valid http or https url"; }
+            if (!valid) { result = "please provide a valid https url"; }
 
             return result;
+        }
+
+        internal static async Task<bool> Initialize()
+        {
+            bool result = await ReadConfiguration(ConfigurationLocation);
+            return result;
+        }
+
+        internal static async Task<bool> ReadConfiguration(string filepath)
+        {
+            bool result = false;
+
+            if (File.Exists(filepath))
+            {
+                CancellationToken token = new CancellationToken();
+
+                string? content = null;
+
+                try { content = await File.ReadAllTextAsync(filepath, token); }
+                catch (Exception e) { Log.Fatal(e, $"{Prefix} attempting to read data from config file @ {filepath}"); }
+
+                if (content != null)
+                {
+                    Configuration? config = null;
+                    try { config = JsonConvert.DeserializeObject<Configuration>(content); }
+                    catch (Exception e) { Log.Fatal(e, $"{Prefix} attempting to deserialize json content -> {content}"); }
+
+                    if (config != null)
+                    {
+                        Configuration.ApplicationConfiguration.ServerURL = config.ServerURL;
+                        Log.Information($"{Prefix} successfully retrieved server url {Configuration.ApplicationConfiguration.ServerURL} from config file @ {filepath}");
+                        result = true;
+                    }
+                    else { Log.Error($"{Prefix} unable to assign new server url to configuration"); }
+                }
+                else { Log.Error($"{Prefix} cannot deserialize a null string, unable to update configuration"); }
+            }
+            else { Log.Warning($"{Prefix} no configuration file exists @ {filepath}; either it has been deleted, or this is the apps first startup on this device"); }
+
+            if (result)
+            {
+                //get the latest database from the interwebs if possible
+                CommissioningChecklistGenerator.Database.Updater.Initialize();
+            }
+
+            return result;
+        }
+
+        internal static async void WriteConfiguration()
+        {
+            try
+            {
+                string? json = null;
+                try { json = JsonConvert.SerializeObject(Configuration.ApplicationConfiguration); }
+                catch (Exception e) { Log.Fatal(e, $"{Prefix} attempting to serialize configuration"); }
+
+                if (File.Exists(ConfigurationLocation))
+                {
+                    try
+                    {
+                        Log.Information($"{Prefix} writing to temp config file");
+                        await File.WriteAllTextAsync(ConfigurationTemporaryLocation, json);
+                        Log.Information($"{Prefix} completed writing to temp config file");
+                        bool success = false;
+                        try
+                        {
+                            File.Move(ConfigurationTemporaryLocation, ConfigurationLocation, true);
+                            success = true;
+                        }
+                        catch (Exception e) { Log.Fatal(e, $"{Prefix} attmempting to move temp config to permanent config"); }
+
+                        if (success) { File.Delete(ConfigurationTemporaryLocation); }
+
+                        Log.Information($"{Prefix} {(success ? "deleting" : "not deleting")} temp config @ {ConfigurationTemporaryLocation}");
+                    }
+                    catch (Exception e) { Log.Fatal(e, $"{Prefix} attempting to write to temp config file"); }
+                }
+                else
+                {
+                    try
+                    {
+                        Log.Information($"{Prefix} writing to new config file");
+                        await File.WriteAllTextAsync(ConfigurationLocation, json);
+                        Log.Information($"{Prefix} completed writing to new config file");
+                    }
+                    catch (Exception e) { Log.Fatal(e, $"{Prefix} attempting to write to new config file"); }
+                }
+            }
+            catch (Exception e) { Log.Fatal(e, $"{Prefix} writing configuration to file"); }
         }
     }
 }
