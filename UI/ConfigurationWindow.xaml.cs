@@ -28,7 +28,7 @@ namespace CommissioningChecklistGenerator.UI
     {
         private const string Prefix = "[ConfigurationWindow]";
 
-        private string _url = CommissioningChecklistGenerator.Configuration.ApplicationConfiguration.ServerURL;
+        private string _url = Application.Configuration.ApplicationConfiguration.ServerURL;
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -49,7 +49,7 @@ namespace CommissioningChecklistGenerator.UI
             {
                 string result = String.Empty;
 
-                if (columnName == nameof(URL)) { result = CommissioningChecklistGenerator.Configuration.ValidateServerURL(URL); }
+                if (columnName == nameof(URL)) { result = Application.Configuration.ValidateServerURL(URL); }
 
                 return result;
             }
@@ -60,22 +60,27 @@ namespace CommissioningChecklistGenerator.UI
         {
             InitializeComponent();
             this.DataContext = this;
-            this.ServerURL.Text = CommissioningChecklistGenerator.Configuration.ApplicationConfiguration.ServerURL;
+            this.ServerURL.Text = Application.Configuration.ApplicationConfiguration.ServerURL;
             this.ServerURL.TextChanged += OnServerURLChanged;
             this.SaveConfiguration.IsEnabled = !Validation.GetHasError(this.ServerURL);
-            this.ServerURLComplete.Content = CommissioningChecklistGenerator.Configuration.ApplicationConfiguration.ServerURL + CommissioningChecklistGenerator.Database.DatabaseConstants.ServerDatabaseFilePath;
+            this.ServerURLComplete.Content = Application.Configuration.ApplicationConfiguration.ServerURL + CommissioningChecklistGenerator.Database.DatabaseConstants.ServerDatabaseFilePath;
         }
 
         private void OnServerURLChanged(object sender, TextChangedEventArgs e)
         {
             this.SaveConfiguration.IsEnabled = !Validation.GetHasError(this.ServerURL);
-            this.ServerURLComplete.Content = CommissioningChecklistGenerator.Configuration.ApplicationConfiguration.ServerURL + CommissioningChecklistGenerator.Database.DatabaseConstants.ServerDatabaseFilePath;
+            this.ServerURLComplete.Content = Application.Configuration.ApplicationConfiguration.ServerURL + CommissioningChecklistGenerator.Database.DatabaseConstants.ServerDatabaseFilePath;
         }
 
         private void OnSaveConfigurationClick(object sender, RoutedEventArgs e)
         {
-            CommissioningChecklistGenerator.ConfigurationReader.WriteConfiguration();
+            //update the static object after validation
+            Application.Configuration.ApplicationConfiguration.ServerURL = this.ServerURL.Text;
+            //write to the configuration
+            Application.Configuration.WriteConfiguration();
+            //return a positive result
             this.DialogResult = true;
+            //close the window
             this.Close();
         }
     }

@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:data="clr-namespace:CommissioningChecklistGenerator"
         mc:Ignorable="d"
-        Title="Configuration Editor" MinHeight="250" MinWidth="500" SizeToContent="WidthAndHeight">
+        Title="Application Settings" MinHeight="450" MinWidth="500" SizeToContent="WidthAndHeight">
     <Border Margin="5">
         <AdornerDecorator>
             <Grid x:Name="MainGrid">
@@ -18,13 +18,28 @@
                     <RowDefinition Height=".45*"/>
                     <RowDefinition Height=".25*"/>
                     <RowDefinition Height=".25*"/>
+                    <RowDefinition Height=".25*"/>
+                    <RowDefinition Height=".25*"/>
+                    <RowDefinition Height=".45*"/>
+                    <RowDefinition Height=".25*"/>
+                    <RowDefinition Height=".45*"/>
                     <RowDefinition Height=".5*"/>
                 </Grid.RowDefinitions>
-                <Label Grid.Row="0" Grid.ColumnSpan="2" Margin="5" VerticalAlignment="Center" Content="Server URL" FontSize="16" FontWeight="Bold"/>
-                <TextBox ToolTip="the web server hosting your database" x:Name="ServerURL" Grid.Row="1" Grid.ColumnSpan="2" FontSize="12" VerticalContentAlignment="Center" HorizontalContentAlignment="Left" VerticalAlignment="Stretch" Margin="5" Style="{ StaticResource ValidatedTextBox }" Text="{ Binding URL, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True }"></TextBox>
+                <Label Grid.Row="0" Grid.ColumnSpan="2" Margin="5" VerticalAlignment="Center" Content="Database Server URL" FontSize="16" FontWeight="Bold"/>
+                <TextBox d:Text="https://www.foobar.com" ToolTip="the web server hosting your database" x:Name="ServerURL" Grid.Row="1" Grid.ColumnSpan="2" FontSize="12" VerticalContentAlignment="Center" HorizontalContentAlignment="Left" VerticalAlignment="Stretch" Margin="5" Style="{ StaticResource ValidatedTextBox }" Text="{ Binding URL, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True }"></TextBox>
+                
                 <Label Grid.Row="2" Grid.ColumnSpan="2" VerticalContentAlignment="Bottom" Content="Generated Database URL" FontWeight="Bold"></Label>
-                <Label ToolTip="this will be the file the application will attempt to download if you save the configuration now" x:Name="ServerURLComplete" Grid.Row="3" Grid.ColumnSpan="2" VerticalContentAlignment="Center" FontStyle="Italic" Foreground="CadetBlue" d:Content="https://www.foobar/db/latest.db"></Label>
-                <Button ToolTip="saves the configuration to disk" x:Name="SaveConfiguration" Grid.Row="6" Content="Save Configuration" Margin="5" Click="OnSaveConfigurationClick"></Button>
+                <Label ToolTip="this will be the file the application will attempt to download if you save the configuration now" x:Name="ServerURLComplete" Grid.Row="3" Grid.ColumnSpan="2" VerticalContentAlignment="Center" FontStyle="Italic" Foreground="CadetBlue" d:Content="https://www.foobar.com/db/latest.db"></Label>
+
+                <Separator Grid.Row="4" Grid.ColumnSpan="2" Margin="5"/>
+
+                <Label Grid.Row="5" Grid.ColumnSpan="2" Margin="5" VerticalAlignment="Center" Content="Identity Server URL" FontSize="16" FontWeight="Bold"/>
+                <TextBox d:Text="https://www.auth-server.com"  ToolTip="the server that authenticates you as a valid user to access the database" x:Name="AuthURL" Grid.Row="6" Grid.ColumnSpan="2" FontSize="12" VerticalContentAlignment="Center" HorizontalContentAlignment="Left" VerticalAlignment="Stretch" Margin="5" Style="{ StaticResource ValidatedTextBox }" Text="{ Binding URL, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True }"></TextBox>
+                
+                <Label Grid.Row="7" Grid.ColumnSpan="2" Margin="5" VerticalAlignment="Center" Content="Client ID" FontSize="16" FontWeight="Bold"/>
+                <TextBox d:Text="002-das-0g0faerer-asd"  ToolTip="the server that authenticates you as a valid user to access the database" x:Name="ClientID" Grid.Row="8" Grid.ColumnSpan="2" FontSize="12" VerticalContentAlignment="Center" HorizontalContentAlignment="Left" VerticalAlignment="Stretch" Margin="5" Style="{ StaticResource ValidatedTextBox }" Text="{ Binding URL, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True }"></TextBox>
+
+                <Button ToolTip="saves the configuration to disk" x:Name="SaveConfiguration" Grid.Row="9" Content="Save Configuration" Margin="5" Click="OnSaveConfigurationClick"></Button>
             </Grid>
         </AdornerDecorator>
     </Border>
