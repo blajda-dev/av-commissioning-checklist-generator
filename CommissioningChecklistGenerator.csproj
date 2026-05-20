@@ -21,7 +21,9 @@
     <PackageReference Include="ACadSharp" Version="3.6.12" />
     <PackageReference Include="ClosedXML" Version="0.102.1" />
     <PackageReference Include="Dapper" Version="2.1.72" />
+    <PackageReference Include="Duende.IdentityModel.OidcClient" Version="7.1.0" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.7" />
+    <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.18.0" />
     <PackageReference Include="netDxf" Version="2023.11.10" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
@@ -31,6 +33,10 @@
 
   <ItemGroup>
     <Page Include="App.xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="res\" />
   </ItemGroup>
 
 </Project>
