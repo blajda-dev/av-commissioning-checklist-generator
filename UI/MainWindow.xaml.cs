@@ -70,15 +70,13 @@ namespace CommissioningChecklistGenerator.UI
         {
             Log.Information($"{Prefix} started");
             //wait for the configuration file to be read before starting up the querier to get the latest database
-            bool success = await CommissioningChecklistGenerator.ConfigurationReader.Initialize();
+            bool success = await Application.Configuration.Initialize();
 
             if (!success) { 
                 ConfigurationWindow configDialog = new ConfigurationWindow();
                 configDialog.Owner = this;
                 configDialog.WindowStartupLocation = WindowStartupLocation.CenterOwner;
                 configDialog.ShowDialog();
-
-                if (configDialog.DialogResult == true) { Configuration.ApplicationConfiguration.ServerURL = configDialog.ServerURL.Text; }
                 
                 CommissioningChecklistGenerator.Database.Updater.Initialize();
             }
@@ -93,7 +91,7 @@ namespace CommissioningChecklistGenerator.UI
             Log.Logger = new LoggerConfiguration()
             .WriteTo.Debug()
             .WriteTo.File(
-                path: Path.Combine(Constants.ApplicationDataDirectory, "logs", "log-.log"),
+                path: Path.Combine(Application.Constants.ApplicationDataDirectory, "logs", "log-.log"),
                 rollingInterval: RollingInterval.Day,
                 outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}"
             )
@@ -141,8 +139,7 @@ namespace CommissioningChecklistGenerator.UI
             ConfigurationWindow configDialog = new ConfigurationWindow();
             configDialog.WindowStartupLocation = WindowStartupLocation.CenterOwner;
             configDialog.Owner = this;
-            configDialog.ShowDialog(); 
-            if (configDialog.DialogResult == true) { Configuration.ApplicationConfiguration.ServerURL = configDialog.ServerURL.Text; }
+            configDialog.ShowDialog();
         }
 
         private void OnDownloadingDatabase(object? sender, EventArgs e)
@@ -445,7 +442,7 @@ namespace CommissioningChecklistGenerator.UI
         /// <param name="args">event args containing data regarding the parse operation</param>
         private void OnParseSystemDrawingsCompleted(DrawingParsedEventArgs args)
         {
-            Application.Current.Dispatcher.Invoke(() =>
+            App.Current.Dispatcher.Invoke(() =>
             {
                 if (args.Success && args.System != null)
                 {
