@@ -1,0 +1,111 @@
+-- capability definition
+
+CREATE TABLE capability (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE
+) STRICT;
+
+
+-- control_type definition
+
+CREATE TABLE control_type (
+	id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+	name TEXT NOT NULL UNIQUE
+)STRICT;
+
+
+-- device_manufacturer definition
+
+CREATE TABLE "device_manufacturer" (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE
+) STRICT;
+
+
+-- device_type definition
+
+CREATE TABLE "device_type" (
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    prefix TEXT NOT NULL UNIQUE,
+    description TEXT NOT NULL
+) STRICT;
+
+
+-- sqlite_schema definition
+
+CREATE TABLE sqlite_schema (
+	"type" TEXT,
+	name TEXT,
+	tbl_name TEXT,
+	rootpage INT,
+	"sql" TEXT
+);
+
+
+-- sqlite_sequence definition
+
+CREATE TABLE sqlite_sequence(name,seq);
+
+
+-- task definition
+
+CREATE TABLE "task" (
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    name TEXT NOT NULL,
+    description TEXT NOT NULL
+) STRICT;
+
+
+-- device_model definition
+
+CREATE TABLE "device_model" (
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    manufacturer_id INTEGER NOT NULL,
+    model TEXT,
+    device_type_id INTEGER NOT NULL,
+    FOREIGN KEY (manufacturer_id) REFERENCES device_manufacturer(id),
+    FOREIGN KEY (device_type_id) REFERENCES device_type(id)
+) STRICT;
+
+
+-- device_model_capability definition
+
+CREATE TABLE device_model_capability (
+	device_model_id INTEGER NOT NULL,
+	capability_id INTEGER NOT NULL,
+	CONSTRAINT DEVICE_MODEL_CAPABILITY_PK PRIMARY KEY (device_model_id,capability_id),
+	CONSTRAINT FK_device_model_capability_capability FOREIGN KEY (capability_id) REFERENCES capability(id),
+	CONSTRAINT FK_device_model_capability_device_model_2 FOREIGN KEY (device_model_id) REFERENCES device_model(id)
+) STRICT;
+
+
+-- device_model_control_type definition
+
+CREATE TABLE device_model_control_type (
+	device_model_id INTEGER NOT NULL,
+	control_type_id INTEGER,
+	CONSTRAINT device_model_control_type_device_model_FK FOREIGN KEY (device_model_id) REFERENCES device_model(id),
+	CONSTRAINT device_model_control_type_control_type_FK FOREIGN KEY (control_type_id) REFERENCES control_type(id)
+)STRICT;
+
+
+-- device_type_capability definition
+
+CREATE TABLE "device_type_capability" (
+	device_type_id INTEGER NOT NULL,
+	capability_id INTEGER NOT NULL,
+	CONSTRAINT DEVICE_CAPABILITY_PK PRIMARY KEY (device_type_id,capability_id),
+	CONSTRAINT FK_device_capability_capability FOREIGN KEY (capability_id) REFERENCES capability(id),
+	CONSTRAINT FK_device_capability_device_type_2 FOREIGN KEY (device_type_id) REFERENCES device_type(id)
+) STRICT;
+
+
+-- task_required_capability definition
+
+CREATE TABLE "task_required_capability" (
+	task_id INTEGER NOT NULL,
+	capability_id INTEGER NOT NULL,
+	CONSTRAINT CHECKLIST_TASK_REQUIRED_CAPABILITY_PK PRIMARY KEY (task_id,capability_id),
+	CONSTRAINT FK_checklist_task_required_capability_capability FOREIGN KEY (capability_id) REFERENCES capability(id),
+	CONSTRAINT checklist_task_required_capability_task_FK FOREIGN KEY (task_id) REFERENCES task(id)
+) STRICT;

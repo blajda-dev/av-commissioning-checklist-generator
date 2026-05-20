@@ -1,0 +1,141 @@
+-- device_effective_capability source
+
+CREATE VIEW device_effective_capability AS
+SELECT
+    m.id AS device_model_id,
+    m.model AS device_model_name,
+    t.id AS device_type_id,
+    t.prefix AS device_type_prefix,
+    c.id AS capability_id,
+    c.name AS capability_name
+FROM device_model m
+JOIN device_type t
+    ON t.id = m.device_type_id
+JOIN device_model_capability dmc
+    ON dmc.device_model_id = m.id
+JOIN capability c
+    ON c.id = dmc.capability_id
+UNION ALL
+SELECT
+    NULL AS device_model_id,
+    NULL AS device_model_name,
+    t.id AS device_type_id,
+    t.prefix AS device_type_prefix,
+    c.id AS capability_id,
+    c.name AS capability_name
+FROM device_type t
+JOIN "device_type_capability" dtc
+    ON dtc.device_type_id = t.id
+JOIN capability c
+    ON c.id = dtc.capability_id;
+
+
+-- device_model_control_types source
+
+CREATE VIEW device_model_control_types AS
+SELECT
+    dm.manufacturer_id AS device_manufacturer_id,
+    dman.name AS device_manufacturer_name,
+    dm.id AS device_model_id,
+    dm.model AS device_model_name,
+    ct.id AS control_type_id,
+    ct.name AS control_type_name
+FROM device_model dm
+JOIN device_model_control_type dmct ON dmct.device_model_id = dm.id
+JOIN device_manufacturer dman ON dman.id = dm.manufacturer_id
+JOIN control_type ct ON ct.id = dmct.control_type_id;
+
+
+-- device_model_task source
+
+CREATE VIEW device_model_task AS
+SELECT
+ 	ec.device_model_id,
+    UPPER(m.model) AS device_model_name,
+    dt.id AS device_type_id,
+    t.id AS task_id,
+    t.name AS task_name,
+    t.description as task_description,
+    UPPER(dt.prefix) AS device_type_prefix
+FROM device_effective_capability ec
+JOIN device_type dt
+    ON dt.id = ec.device_type_id
+LEFT JOIN device_model m
+    ON m.id = ec.device_model_id
+JOIN "task_required_capability" trc
+    ON trc.capability_id = ec.capability_id
+JOIN task t
+    ON t.id = trc.task_id
+GROUP BY
+    ec.device_model_id,
+    ec.device_type_id,
+    t.id
+HAVING COUNT(DISTINCT trc.capability_id) = (
+    SELECT COUNT(*)
+    FROM "task_required_capability" trc2
+    WHERE trc2.task_id = t.id
+);
+
+
+-- device_resolution source
+
+CREATE VIEW device_resolution AS
+SELECT
+    m.id AS entity_id,
+    m.model AS entity_name,
+    t.prefix,
+    t.id AS device_type_id,
+    'MODEL' AS resolution_type
+FROM device_model m
+JOIN device_type t
+    ON t.id = m.device_type_id
+UNION
+SELECT
+    t.id AS entity_id,
+    t.prefix AS entity_name,
+    t.prefix,
+    t.id AS device_type_id,
+    'TYPE' AS resolution_type
+FROM device_type t;
+
+
+-- device_type_task source
+
+CREATE VIEW device_type_task AS
+SELECT
+    t.id AS task_id,
+    t.name AS task_name,
+    t.description as task_description,
+    UPPER(dt.prefix) AS device_type_prefix,
+    dt.id AS device_type_id
+FROM device_type dt
+JOIN "device_type_capability" dc
+    ON dc.device_type_id = dt.id
+JOIN "task_required_capability" trc
+    ON trc.capability_id = dc.capability_id
+JOIN task t
+    ON t.id = trc.task_id
+GROUP BY
+    dt.id,
+    t.id
+HAVING COUNT(DISTINCT trc.capability_id) = (
+    SELECT COUNT(*)
+    FROM "task_required_capability" trc2
+    WHERE trc2.task_id = t.id
+);
+
+
+-- task_required_capabilities source
+
+CREATE VIEW task_required_capabilities AS
+SELECT
+    c.id AS capability_id,
+    c.name AS capability_name,
+    t.id AS task_id,
+    t.name AS task_name,
+    t.description as task_description
+FROM capability c
+JOIN "task_required_capability" trc
+    ON trc.capability_id = c.id
+JOIN task t
+    ON t.id = trc.task_id;
