@@ -28,7 +28,9 @@ namespace CommissioningChecklistGenerator.UI
     {
         private const string Prefix = "[ConfigurationWindow]";
 
-        private string _url = Application.Configuration.ApplicationConfiguration.ServerURL;
+        private string _url = Settings.Configuration.ApplicationConfiguration.ServerURL;
+        private string _authURL = Settings.Configuration.ApplicationConfiguration.AuthenticationURL;
+        private string _clientID = Settings.Configuration.ApplicationConfiguration.ClientID;
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -41,6 +43,26 @@ namespace CommissioningChecklistGenerator.UI
             }
         }
 
+        public string AuthenticationURL
+        {
+            get { return this._authURL; }
+            set
+            {
+                _authURL = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(AuthenticationURL)));
+            }
+        }
+
+        public string ClientID
+        {
+            get { return this._clientID; }
+            set
+            {
+                _clientID = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ClientID)));
+            }
+        }
+
         public string Error =>  String.Empty; 
 
         public string this[string columnName]
@@ -49,7 +71,7 @@ namespace CommissioningChecklistGenerator.UI
             {
                 string result = String.Empty;
 
-                if (columnName == nameof(URL)) { result = Application.Configuration.ValidateServerURL(URL); }
+                if (columnName == nameof(URL)) { result = Settings.Configuration.ValidateServerURL(URL); }
 
                 return result;
             }
@@ -60,24 +82,24 @@ namespace CommissioningChecklistGenerator.UI
         {
             InitializeComponent();
             this.DataContext = this;
-            this.ServerURL.Text = Application.Configuration.ApplicationConfiguration.ServerURL;
+            this.ServerURL.Text = Settings.Configuration.ApplicationConfiguration.ServerURL;
             this.ServerURL.TextChanged += OnServerURLChanged;
             this.SaveConfiguration.IsEnabled = !Validation.GetHasError(this.ServerURL);
-            this.ServerURLComplete.Content = Application.Configuration.ApplicationConfiguration.ServerURL + CommissioningChecklistGenerator.Database.DatabaseConstants.ServerDatabaseFilePath;
+            this.ServerURLComplete.Content = Settings.Configuration.ApplicationConfiguration.ServerURL + CommissioningChecklistGenerator.Database.DatabaseConstants.ServerDatabaseFilePath;
         }
 
         private void OnServerURLChanged(object sender, TextChangedEventArgs e)
         {
             this.SaveConfiguration.IsEnabled = !Validation.GetHasError(this.ServerURL);
-            this.ServerURLComplete.Content = Application.Configuration.ApplicationConfiguration.ServerURL + CommissioningChecklistGenerator.Database.DatabaseConstants.ServerDatabaseFilePath;
+            this.ServerURLComplete.Content = Settings.Configuration.ApplicationConfiguration.ServerURL + CommissioningChecklistGenerator.Database.DatabaseConstants.ServerDatabaseFilePath;
         }
 
         private void OnSaveConfigurationClick(object sender, RoutedEventArgs e)
         {
             //update the static object after validation
-            Application.Configuration.ApplicationConfiguration.ServerURL = this.ServerURL.Text;
+            Settings.Configuration.ApplicationConfiguration.ServerURL = this.ServerURL.Text;
             //write to the configuration
-            Application.Configuration.WriteConfiguration();
+            Settings.Configuration.WriteConfiguration();
             //return a positive result
             this.DialogResult = true;
             //close the window
