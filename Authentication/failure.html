@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Login Failed</title>
+        <style>
+            :root {
+                --bg-color: #0d1117;
+                --card-bg: #161b22;
+                --accent-fail: #f85149;
+                --accent-glow: rgba(248, 81, 73, 0.15);
+                --text-primary: #c9d1d9;
+                --text-secondary: #8b949e;
+                --border-color: #30363d;
+            }
+
+            * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+                background-color: var(--bg-color);
+                color: var(--text-primary);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 100vh;
+                padding: 20px;
+            }
+
+            .card {
+                background-color: var(--card-bg);
+                border: 1px solid var(--border-color);
+                border-radius: 12px;
+                padding: 40px 24px;
+                max-width: 420px;
+                width: 100%;
+                text-align: center;
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+                animation: fadeIn 0.4s ease-out;
+            }
+
+            .icon-container {
+                width: 72px;
+                height: 72px;
+                background-color: var(--accent-glow);
+                border: 2px solid var(--accent-fail);
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin: 0 auto 24px auto;
+                color: var(--accent-fail);
+            }
+
+                .icon-container svg {
+                    width: 36px;
+                    height: 36px;
+                    stroke-width: 2.5;
+                }
+
+            h1 {
+                font-size: 24px;
+                font-weight: 600;
+                margin-bottom: 12px;
+                letter-spacing: -0.5px;
+            }
+
+            p.intro {
+                font-size: 15px;
+                color: var(--text-primary);
+                line-height: 1.6;
+                margin-bottom: 16px;
+            }
+
+            .error-details-box {
+                background-color: rgba(248, 81, 73, 0.05);
+                border: 1px solid rgba(248, 81, 73, 0.2);
+                border-radius: 6px;
+                padding: 16px;
+                margin-bottom: 24px;
+                text-align: left;
+            }
+
+            .error-label {
+                font-size: 11px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                color: var(--accent-fail);
+                font-weight: 700;
+                margin-bottom: 4px;
+            }
+
+            .error-text {
+                font-size: 14px;
+                color: var(--text-secondary);
+                line-height: 1.5;
+                word-break: break-word;
+            }
+
+                .error-text:not(:last-child) {
+                    margin-bottom: 12px;
+                }
+
+            .badge {
+                display: inline-flex;
+                align-items: center;
+                background-color: rgba(248, 81, 73, 0.1);
+                color: var(--accent-fail);
+                border: 1px solid rgba(248, 81, 73, 0.2);
+                padding: 6px 12px;
+                border-radius: 20px;
+                font-size: 13px;
+                font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
+            }
+
+            .footer-note {
+                margin-top: 32px;
+                font-size: 12px;
+                color: #484f58;
+                border-top: 1px solid var(--border-color);
+                padding-top: 16px;
+            }
+
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(10px);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            /* Mobile Phone Optimization Rules */
+            @media (max-width: 480px) {
+                .card {
+                    padding: 32px 16px;
+                    border: none;
+                    background-color: transparent;
+                    box-shadow: none;
+                }
+
+                body {
+                    background-color: var(--card-bg);
+                }
+            }
+        </style>
+    </head>
+    <body>
+
+        <div class="card">
+            <div class="icon-container">
+                <!-- X Mark SVG -->
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </div>
+            <h1>Authentication Failed</h1>
+            <p class="intro">The security server encountered an issue validating your sign-in profile.</p>
+
+            <div class="error-details-box">
+                <div class="error-label">Error Code</div>
+                <div class="error-text" id="error-code">unknown_error</div>
+
+                <div class="error-label">Description</div>
+                <div class="error-text" id="error-desc">An unspecified error occurred during authorization.</div>
+            </div>
+
+            <div class="badge">
+                Transaction Aborted
+            </div>
+
+            <div class="footer-note">
+                Please copy the error details from this window and contact your administrator, providing them the error details in order to resolve this issue.
+            </div>
+        </div>
+
+        <script>
+            const urlParams = new URLSearchParams(window.location.search);
+            const errorParam = urlParams.get('error');
+            const descParam = urlParams.get('error_description');
+
+            if (errorParam) {
+                document.getElementById('error-code').textContent = errorParam;
+            }
+
+            if (descParam) {
+                const cleanDescription = decodeURIComponent(descParam).replace(/\+/g, ' ');
+                document.getElementById('error-desc').textContent = cleanDescription;
+            }
+        </script>
+    </body>
+</html>
