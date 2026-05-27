@@ -5,12 +5,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CommissioningChecklistGenerator.Application
+namespace CommissioningChecklistGenerator.Settings
 {
     class Constants
     {
         internal const string ApplicationName = "CommissioningChecklistGenerator";
         internal const string ConfigurationFileName = "config.json";
-        internal static readonly string ApplicationDataDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), Application.Constants.ApplicationName);
+        internal static readonly string ApplicationDataDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), Settings.Constants.ApplicationName);
     }
 }

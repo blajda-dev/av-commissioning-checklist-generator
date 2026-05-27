@@ -10,7 +10,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace CommissioningChecklistGenerator.Application
+namespace CommissioningChecklistGenerator.Settings
 {
     public class Configuration : IDataErrorInfo, INotifyPropertyChanged
     {
