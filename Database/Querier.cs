@@ -1,5 +1,6 @@
 ﻿using CommissioningChecklistGenerator.ProjectModel;
 using CommissioningChecklistGenerator.Checklist;
+using CommissioningChecklistGenerator.Settings;
 using Microsoft.Data.Sqlite;
 using Dapper;
 using Serilog;
@@ -98,8 +99,10 @@ namespace CommissioningChecklistGenerator.Database
                     object? result = await cmd.ExecuteScalarAsync();
                     if (result != null)
                     {
-                        Log.Debug($"{Prefix} retr");
-                        if (result != null) { valid = true; }
+                        if (result != null) {
+                            valid = true;
+                            Log.Debug($"{Prefix} database file is a valid sqlite database");
+                        }
                     }
                 }
             }

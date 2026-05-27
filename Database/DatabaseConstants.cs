@@ -27,8 +27,8 @@ namespace CommissioningChecklistGenerator.Database
         internal const string TaskNameColumnName = "task_name";
         internal const string TaskDescriptionColumnName = "task_description";
         //file locations
-        internal static readonly string EmbeddedDatabaseFilePath = Path.Combine(CommissioningChecklistGenerator.Constants.ApplicationDataDirectory, DatabaseConstants.EmbeddedDatabaseOutputFilename);
-        internal static readonly string LatestDatabaseFilePath = Path.Combine(CommissioningChecklistGenerator.Constants.ApplicationDataDirectory, DatabaseConstants.LatestDatabaseFileName);
+        internal static readonly string EmbeddedDatabaseFilePath = Path.Combine(Settings.Constants.ApplicationDataDirectory, DatabaseConstants.EmbeddedDatabaseOutputFilename);
+        internal static readonly string LatestDatabaseFilePath = Path.Combine(Settings.Constants.ApplicationDataDirectory, DatabaseConstants.LatestDatabaseFileName);
         //updaters
         internal const string ServerDatabaseFilePath = "/db/latest/database.db";
         internal const int ServerUpdateInterval = 60 * 1000 * 60;

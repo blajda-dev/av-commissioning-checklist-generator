@@ -1,5 +1,6 @@
 ﻿using CommissioningChecklistGenerator.Checklist;
 using CommissioningChecklistGenerator.Extensions;
+using CommissioningChecklistGenerator.Settings;
 using CommissioningChecklistGenerator.UI;
 using DocumentFormat.OpenXml.Presentation;
 using DocumentFormat.OpenXml.Wordprocessing;
@@ -59,9 +60,9 @@ namespace CommissioningChecklistGenerator.Database
         {
             IsDownloading = false;
 
-            if (!CommissioningChecklistGenerator.Configuration.ApplicationConfiguration.ServerURLValid) { Log.Warning($"{Prefix} server url not configured, database update requests will fail!"); }
+            if (!Configuration.ApplicationConfiguration.ServerURLValid) { Log.Warning($"{Prefix} server url not configured, database update requests will fail!"); }
 
-            Log.Information($"{Prefix} get latest database @ server {CommissioningChecklistGenerator.Configuration.ApplicationConfiguration.ServerURL} every {DatabaseConstants.ServerUpdateInterval / (1000 * 60 * 60)} hours");
+            Log.Information($"{Prefix} get latest database @ server {Configuration.ApplicationConfiguration.ServerURL} every {DatabaseConstants.ServerUpdateInterval / (1000 * 60 * 60)} hours");
             databaseUpdateTimer = new Timer(OnDatabaseUpdateTimerExpired, null, 0, DatabaseConstants.ServerUpdateInterval);
             Log.Debug($"{Prefix} timer started");
         }
@@ -72,7 +73,7 @@ namespace CommissioningChecklistGenerator.Database
         /// <returns></returns>
         private static string GenerateRemoteDatabaseLocation()
         {
-            return CommissioningChecklistGenerator.Configuration.ApplicationConfiguration.ServerURL + DatabaseConstants.ServerDatabaseFilePath;
+            return Configuration.ApplicationConfiguration.ServerURL + DatabaseConstants.ServerDatabaseFilePath;
         }
 
         /// <summary>
@@ -161,7 +162,7 @@ namespace CommissioningChecklistGenerator.Database
                     progress += 5;
                     reporter.Report(new ProgressUpdate(progress, $"Contacted Server @ {Configuration.ApplicationConfiguration.ServerURL}"));
 
-                    Log.Debug($"{Prefix} able to contact server @ {CommissioningChecklistGenerator.Configuration.ApplicationConfiguration.ServerURL}");
+                    Log.Debug($"{Prefix} able to contact server @ {Configuration.ApplicationConfiguration.ServerURL}");
 
                     if (response.IsSuccessStatusCode)
                     {
