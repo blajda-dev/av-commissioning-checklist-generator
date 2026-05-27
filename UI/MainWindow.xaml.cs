@@ -2,23 +2,22 @@
 using System.Windows;
 using System.Linq;
 using System.ComponentModel;
-using CommissioningChecklistGenerator.ProjectModel;
 using System.IO;
 using Newtonsoft.Json;
 using System.Collections.Generic;
-using CommissioningChecklistGenerator.Checklist;
 using ClosedXML.Excel;
 using System.Windows.Controls;
-using CommissioningChecklistGenerator.Drawings;
+using System.Threading.Tasks;
 using Serilog;
 using Serilog.Sinks.File;
 using Microsoft.VisualBasic.FileIO;
-using System.Threading.Tasks;
+using CommissioningChecklistGenerator.ProjectModel;
+using CommissioningChecklistGenerator.Drawings;
+using CommissioningChecklistGenerator.Checklist;
+using CommissioningChecklistGenerator.UI;
 using CommissioningChecklistGenerator.Database;
 using CommissioningChecklistGenerator.Extensions;
-using DocumentFormat.OpenXml.Office2010.Excel;
-using CommissioningChecklistGenerator.UI;
-using DocumentFormat.OpenXml.Drawing.Charts;
+using CommissioningChecklistGenerator.Settings;
 
 namespace CommissioningChecklistGenerator.UI
 {
@@ -70,7 +69,7 @@ namespace CommissioningChecklistGenerator.UI
         {
             Log.Information($"{Prefix} started");
             //wait for the configuration file to be read before starting up the querier to get the latest database
-            bool success = await Application.Configuration.Initialize();
+            bool success = await Settings.Configuration.Initialize();
 
             if (!success) { 
                 ConfigurationWindow configDialog = new ConfigurationWindow();
@@ -80,6 +79,8 @@ namespace CommissioningChecklistGenerator.UI
                 
                 CommissioningChecklistGenerator.Database.Updater.Initialize();
             }
+
+            //await Authentication.OpenAuth.Initialize("https://auth.blajda-gen2.loginto.me/realms/authorized-users/", "webserver");
             Log.Information($"{Prefix} initialized");
         }
 
@@ -91,7 +92,7 @@ namespace CommissioningChecklistGenerator.UI
             Log.Logger = new LoggerConfiguration()
             .WriteTo.Debug()
             .WriteTo.File(
-                path: Path.Combine(Application.Constants.ApplicationDataDirectory, "logs", "log-.log"),
+                path: Path.Combine(Settings.Constants.ApplicationDataDirectory, "logs", "log-.log"),
                 rollingInterval: RollingInterval.Day,
                 outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}"
             )
