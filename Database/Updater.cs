@@ -11,6 +11,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -107,10 +108,16 @@ namespace CommissioningChecklistGenerator.Database
         /// <summary>
         /// downloads the latest database from the remote server defined by the settings, called by the auto-download timer, and manual download button
         /// </summary>
-        public static void DownloadDatabase()
+        public static async Task DownloadDatabase()
         {
             try {
                 IsDownloading = true;
+
+                if (Configuration.ApplicationConfiguration.EnableSSO && !Authentication.OpenAuth.IsAuthenticated)
+                {
+                    await Authentication.OpenAuth.Initialize(Configuration.ApplicationConfiguration.AuthenticationURL, Configuration.ApplicationConfiguration.ClientID);
+                }
+
                 PrepareForDatabaseDownload();
             }
             catch (Exception e) {
@@ -155,6 +162,12 @@ namespace CommissioningChecklistGenerator.Database
             bool result = false;
             string reason = "unknown failure";
 
+            //add the bearer token if authentication is enabled
+            if (Settings.Configuration.ApplicationConfiguration.EnableSSO) { 
+                Log.Debug($"{Prefix} authentication enabled, adding bearer token to request header");
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Authentication.OpenAuth.Token); 
+            }
+
             try
             {
                 using (HttpResponseMessage response = await client.GetAsync(GenerateRemoteDatabaseLocation(), HttpCompletionOption.ResponseHeadersRead))
@@ -177,8 +190,6 @@ namespace CommissioningChecklistGenerator.Database
                             await Generator.Idle.WaitAsync(new TimeSpan(0, 0, 5));
 
                             string? tempFile = await DownloadDatabaseToTemporaryFile(reporter, response);
-
-                            
 
                             if (tempFile != null) {
                                 (bool valid, reason) = await Querier.ValidateTemporaryDatabase(tempFile);
