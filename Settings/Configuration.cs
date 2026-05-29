@@ -84,6 +84,9 @@ namespace CommissioningChecklistGenerator.Settings
             }
         }
 
+        [JsonIgnore]
+        private string _clientID = String.Empty;
+
         [JsonProperty("client_id")]
         public string ClientID {
             get { return _clientID; }
