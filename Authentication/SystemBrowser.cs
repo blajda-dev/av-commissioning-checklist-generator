@@ -1,4 +1,6 @@
-﻿using DocumentFormat.OpenXml.Wordprocessing;
+﻿using CommissioningChecklistGenerator.Settings;
+using DocumentFormat.OpenXml.Office2016.Drawing.Command;
+using DocumentFormat.OpenXml.Wordprocessing;
 using Duende.IdentityModel.OidcClient;
 using Duende.IdentityModel.OidcClient.Browser;
 using Serilog;
@@ -29,27 +31,41 @@ namespace CommissioningChecklistGenerator.Authentication
             return (code >= 200 && code < 300);
         }
 
-        private bool IsAuthenticated(NameValueCollection? parameters)
+        private AuthorizationResponse ParseResponse(NameValueCollection? parameters)
         {
-            if (parameters != null)
-            {
-                return ((parameters["error"] == String.Empty) || (parameters["error"] == null));
-            }
-            return false;
+            AuthorizationResponse response = AuthorizationResponse.Unknown;
+
+            if (parameters?["code"] != null) { response = AuthorizationResponse.Success; }
+            else if (parameters?["error"] != null) { response = AuthorizationResponse.Failure; }
+            else if (parameters?["code"] == null && parameters?["error"] == null) { response = AuthorizationResponse.Logout; }
+            else { }
+
+            return response;
         }
 
-        private FileStream HandleRequest(Uri? url)
+        private Stream HandleRequest(Uri? url)
         {
-            FileStream html = new FileStream("D:\\PERSONAL\\_ryan_root\\_projects\\_programming\\C#\\CommissioningChecklistGenerator\\Authentication\\failure.html", FileMode.Open, FileAccess.Read);
+            Assembly assembly = Assembly.GetExecutingAssembly();
+
+            Stream html = assembly.GetManifestResourceStream($"{Constants.ApplicationName}.Authentication.Resources.sso-failure.html") ?? Stream.Null;
 
             if (url != null)
             { 
                 NameValueCollection parameters = HttpUtility.ParseQueryString(url?.Query ?? String.Empty);
-                
-                if (IsAuthenticated(parameters)) {
-                    html = new FileStream("D:\\PERSONAL\\_ryan_root\\_projects\\_programming\\C#\\CommissioningChecklistGenerator\\Authentication\\success.html", FileMode.Open, FileAccess.Read);
+                AuthorizationResponse response = ParseResponse(parameters);
+                Log.Debug($"{Prefix} autthorization response -> {response}");
+
+                switch (response)
+                {
+                    case AuthorizationResponse.Success:
+                        html = assembly.GetManifestResourceStream($"{Constants.ApplicationName}.Authentication.Resources.sso-login-success.html") ?? Stream.Null;
+                        break;
+                    case AuthorizationResponse.Logout:
+                        html = assembly.GetManifestResourceStream($"{Constants.ApplicationName}.Authentication.Resources.sso-logout-success.html") ?? Stream.Null;
+                        break;
+                    default:
+                        break;
                 }
-                else { Log.Error($"{Prefix} {parameters["error"]} {parameters["error_description"]}"); }
             }
 
             return html;
@@ -59,9 +75,11 @@ namespace CommissioningChecklistGenerator.Authentication
         {
             BrowserResult result = new BrowserResult { ResultType = BrowserResultType.UnknownError };
             HttpListener? callbackListener = null;
+            CancellationTokenSource timeoutToken = new CancellationTokenSource(TimeSpan.FromMinutes(1));
 
             try
             {
+                Log.Debug($"{Prefix} create http listener to listen for responses from {Settings.Configuration.ApplicationConfiguration.AuthenticationURL} -> {options.EndUrl}");
                 callbackListener = new HttpListener();
                 callbackListener.Prefixes.Add(options.EndUrl);
                 callbackListener.Start();
@@ -75,34 +93,74 @@ namespace CommissioningChecklistGenerator.Authentication
             {
                 if (callbackListener.IsListening)
                 {
-                    Process.Start(new ProcessStartInfo
+                    try { 
+                        Process.Start(new ProcessStartInfo
+                        {
+                            FileName = options.StartUrl,
+                            UseShellExecute = true
+                        });
+
+                        bool pageLoaded = false;
+
+                        while (callbackListener.IsListening && !pageLoaded)
+                        {
+                            HttpListenerContext? context = null;
+                            try { context = await callbackListener.GetContextAsync().WaitAsync(timeoutToken.Token); }
+                            catch (TaskCanceledException e) {
+                                if(callbackListener != null && callbackListener.IsListening)
+                                {
+                                    callbackListener.Stop();
+                                    callbackListener.Close();
+                                    result.Error = "TimeoutError";
+                                    result.ErrorDescription = "timed out waiting for server response callback";
+                                }
+                                Log.Warning(e, $"{Prefix} timed out waiting for server response callback"); 
+                            }
+                            finally {
+                                if (context != null)
+                                {
+                                    if (context.Request.Url?.LocalPath == "/loaded")
+                                    {
+                                        Log.Debug($"{Prefix} response page loaded");
+                                        pageLoaded = true;
+                                        context.Response.StatusCode = (int)HttpStatusCode.OK;
+                                        context.Response.Close();
+                                    }
+                                    else if (context.Request.Url?.LocalPath == "/")
+                                    {
+                                        Stream reader = HandleRequest(context.Request.Url);
+
+                                        context.Response.ContentType = "text/html; charset=utf-8";
+                                        context.Response.ContentLength64 = reader.Length;
+
+                                        await reader.CopyToAsync(context.Response.OutputStream);
+                                        await context.Response.OutputStream.FlushAsync();
+
+                                        result.Response = context.Request.Url?.AbsoluteUri ?? String.Empty;
+
+                                        AuthorizationResponse response = ParseResponse(HttpUtility.ParseQueryString(context.Request.Url?.Query ?? String.Empty));
+
+                                        result.ResultType = response.HasFlag(AuthorizationResponse.Success) || response.HasFlag(AuthorizationResponse.Logout) ? BrowserResultType.Success : BrowserResultType.HttpError;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    catch(Exception e) { Log.Error(e, $"{Prefix} handling server response callback"); }
+                    finally
                     {
-                        FileName = options.StartUrl,
-                        UseShellExecute = true
-                    });
-
-                    HttpListenerContext context = await callbackListener.GetContextAsync();
-
-                    FileStream reader = HandleRequest(context.Request.Url);
-
-                    context.Response.ContentType = "text/html; charset=utf-8";
-                    context.Response.ContentLength64 = reader.Length;
-
-                    await reader.CopyToAsync(context.Response.OutputStream);
-                    await context.Response.OutputStream.FlushAsync();
-                    context.Response.Close();
-
-                    result.Response = context.Request.Url?.AbsoluteUri ?? String.Empty;
-                    result.ResultType = IsAuthenticated(HttpUtility.ParseQueryString(context.Request.Url?.Query ?? String.Empty)) ? BrowserResultType.Success : BrowserResultType.HttpError;
+                        if (callbackListener != null && callbackListener.IsListening)
+                        {
+                            callbackListener.Stop();
+                            callbackListener.Close();
+                        }
+                    }
                 }
                 else
                 {
                     Log.Warning($"{Prefix} http callback not listening, could not handle server response");
                     result.Error = "http callback not listening, could not handle server response";
                 }
-
-                callbackListener.Stop();
-                callbackListener.Close();
             }
 
             return result;
