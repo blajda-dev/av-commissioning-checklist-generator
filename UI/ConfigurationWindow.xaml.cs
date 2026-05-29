@@ -84,8 +84,18 @@ namespace CommissioningChecklistGenerator.UI
             this.DataContext = this;
             this.ServerURL.Text = Settings.Configuration.ApplicationConfiguration.ServerURL;
             this.ServerURL.TextChanged += OnServerURLChanged;
-            this.SaveConfiguration.IsEnabled = !Validation.GetHasError(this.ServerURL);
+            this.AuthURL.TextChanged += OnServerURLChanged;
             this.ServerURLComplete.Content = Settings.Configuration.ApplicationConfiguration.ServerURL + CommissioningChecklistGenerator.Database.DatabaseConstants.ServerDatabaseFilePath;
+            //assign the current configuration value for SSO to the checkbox
+            this.EnableSSO.IsChecked = Settings.Configuration.ApplicationConfiguration.EnableSSO;
+            //assign these afterwards so that bindings update correctly
+            this.AuthenticationURL = Settings.Configuration.ApplicationConfiguration.AuthenticationURL;
+            this.ClientID = Settings.Configuration.ApplicationConfiguration.ClientID;
+
+            Log.Debug($"{Prefix} url -> {this.ServerURL.Text} sso -> {this.EnableSSO.IsChecked} auth url -> {this.AuthURL.Text} client -> {this.Client.Text}");
+
+            //check the initial state because the checkbox won't trigger the event on initialization and we need to make sure the authentication members are in the correct state
+            DisableAuthenticationMembers(this.EnableSSO.IsChecked);
         }
 
         private void OnServerURLChanged(object sender, TextChangedEventArgs e)
@@ -104,6 +114,21 @@ namespace CommissioningChecklistGenerator.UI
             this.DialogResult = true;
             //close the window
             this.Close();
+        }
+
+        private void DisableAuthenticationMembers(bool? disable)
+        {
+            if (disable.HasValue) {
+                this.AuthURLLabel.IsEnabled = disable.Value;
+                this.AuthURL.IsEnabled = disable.Value;
+                this.ClientLabel.IsEnabled = disable.Value;
+                this.Client.IsEnabled = disable.Value;
+            }
+        }
+
+        private void OnChecked(object sender, RoutedEventArgs e)
+        {
+            DisableAuthenticationMembers(((CheckBox)sender).IsChecked);
         }
     }
 }
