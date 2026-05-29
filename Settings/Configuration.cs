@@ -46,7 +46,7 @@ namespace CommissioningChecklistGenerator.Settings
                     string previous = _serverURL;
                     _serverURL = value;
                     if (ValidateServerURL(_serverURL) == String.Empty) {
-                        if (previous != _serverURL) { Log.Information($"{Prefix} configured server url changed -> {_serverURL}"); }
+                        if (previous != _serverURL) { Log.Debug($"{Prefix} configured server url changed -> {_serverURL}"); }
                         this.ServerURLValid = true;
                     }
                     else {
@@ -73,7 +73,7 @@ namespace CommissioningChecklistGenerator.Settings
                     _authenticationUrl = value;
                     if (ValidateServerURL(_authenticationUrl) == String.Empty)
                     {
-                        if (previous != _authenticationUrl) { Log.Information($"{Prefix} configured server url changed -> {_authenticationUrl}"); }
+                        if (previous != _authenticationUrl) { Log.Debug($"{Prefix} configured server url changed -> {_authenticationUrl}"); }
                     }
                     else
                     {
