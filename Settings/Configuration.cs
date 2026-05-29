@@ -162,6 +162,18 @@ namespace CommissioningChecklistGenerator.Settings
             return result;
         }
 
+        private static void UpdateApplicationConfiguration(Configuration config, string filepath)
+        {
+            Configuration.ApplicationConfiguration.ServerURL = config.ServerURL;
+            Log.Debug($"{Prefix} {(config.ServerURL != String.Empty ? "successfully" : "failed to")} retrieved server url -> {config.ServerURL} from config file @ {filepath}");
+            ApplicationConfiguration.AuthenticationURL = config.AuthenticationURL;
+            Log.Debug($"{Prefix} {(config.AuthenticationURL != String.Empty ? "successfully" : "failed to")} retrieved auth url -> {config.AuthenticationURL} from config file @ {filepath}");
+            ApplicationConfiguration.ClientID = config.ClientID;
+            Log.Debug($"{Prefix} {(config.ClientID != String.Empty ? "successfully" : "failed to")} retrieved client id -> {config.ClientID} from config file @ {filepath}");
+            ApplicationConfiguration.EnableSSO = config.EnableSSO;
+            Log.Debug($"{Prefix} retrieved enable sso -> {config.EnableSSO} from config file @ {filepath}");
+        }
+
         internal static async Task<bool> ReadConfiguration(string filepath)
         {
             bool result = false;
@@ -183,8 +195,7 @@ namespace CommissioningChecklistGenerator.Settings
 
                     if (config != null)
                     {
-                        Configuration.ApplicationConfiguration.ServerURL = config.ServerURL;
-                        Log.Information($"{Prefix} successfully retrieved server url {Configuration.ApplicationConfiguration.ServerURL} from config file @ {filepath}");
+                        UpdateApplicationConfiguration(config, filepath);
                         result = true;
                     }
                     else { Log.Error($"{Prefix} unable to assign new server url to configuration"); }
