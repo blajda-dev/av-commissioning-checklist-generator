@@ -109,7 +109,6 @@
                 }
             }
 
-            /* Mobile Phone Optimization Rules */
             @media (max-width: 480px) {
                 .card {
                     padding: 32px 16px;
@@ -142,5 +141,8 @@
                 You can safely close this browser window or tab now.
             </div>
         </div>
+        <script>
+            document.addEventListener("DOMContentLoaded", () => { fetch('/loaded').catch(err => console.log('unable to request loaded endpoint')); });
+        </script>
     </body>
 </html>

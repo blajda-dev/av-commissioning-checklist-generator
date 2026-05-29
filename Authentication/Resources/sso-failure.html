@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Login Failed</title>
+        <title>Error</title>
         <style>
             :root {
                 --bg-color: #0d1117;
@@ -138,7 +138,6 @@
                 }
             }
 
-            /* Mobile Phone Optimization Rules */
             @media (max-width: 480px) {
                 .card {
                     padding: 32px 16px;
@@ -157,7 +156,7 @@
 
         <div class="card">
             <div class="icon-container">
-                <!-- X Mark SVG -->
+                <!-- x mark svg -->
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -195,6 +194,8 @@
                 const cleanDescription = decodeURIComponent(descParam).replace(/\+/g, ' ');
                 document.getElementById('error-desc').textContent = cleanDescription;
             }
+
+            document.addEventListener("DOMContentLoaded", () => { fetch('/loaded').catch(err => console.log('unable to request loaded endpoint')); });
         </script>
     </body>
 </html>
