@@ -38,6 +38,7 @@ namespace CommissioningChecklistGenerator.UI
             DataContext = this;
             Log.Debug($"{Prefix} subscribe to window initialized event");
             this.ContentRendered += OnShown;
+            this.Closing += OnClosing;
             Log.Debug($"{Prefix} initialize window");
             InitializeComponent();
             this.WindowStartupLocation = WindowStartupLocation.CenterScreen;
@@ -65,6 +66,39 @@ namespace CommissioningChecklistGenerator.UI
             Drawings.DrawingParser.DrawingParsed = OnParseSystemDrawingsCompleted;
         }
 
+        private async Task Logout()
+        {
+            this.Hide();
+
+            try
+            {
+                Log.Debug($"{Prefix} log out from authentication provider");
+                await Authentication.OpenAuth.Logout();
+            }
+            catch (Exception err) { Log.Error(err, $"{Prefix} error logging out"); }
+            finally
+            {
+                Log.Information($"{Prefix} calling shutdown");
+                Application.Current.Shutdown();
+            }
+        }
+
+        private async void OnClosing(object? sender, CancelEventArgs e)
+        {
+            if (Authentication.OpenAuth.IsAuthenticated)
+            {
+                MessageBoxResult result = MessageBox.Show("You are currently logged in to the authentication server, would you like to log out?\r\rYou should do this if this machine is shared!", "Log Out?", MessageBoxButton.YesNo);
+                
+                if (result == MessageBoxResult.Yes)
+                {
+                    e.Cancel = true;
+                    await Logout();
+                }
+                else { Log.Debug($"{Prefix} logout canceled"); }
+            }
+            else { Log.Information($"{Prefix} already logged out -> exiting"); }
+        }
+
         private async void OnShown(object? sender, EventArgs e)
         {
             Log.Information($"{Prefix} started");
@@ -80,7 +114,6 @@ namespace CommissioningChecklistGenerator.UI
                 CommissioningChecklistGenerator.Database.Updater.Initialize();
             }
 
-            //await Authentication.OpenAuth.Initialize("https://auth.blajda-gen2.loginto.me/realms/authorized-users/", "webserver");
             Log.Information($"{Prefix} initialized");
         }
 
@@ -151,9 +184,9 @@ namespace CommissioningChecklistGenerator.UI
             }
         }
 
-        private void OnDownloadDatabase(object sender, RoutedEventArgs e)
+        private async void OnDownloadDatabase(object sender, RoutedEventArgs e)
         {
-            Updater.DownloadDatabase();
+            await Updater.DownloadDatabase();
         }
 
         /// <summary>
