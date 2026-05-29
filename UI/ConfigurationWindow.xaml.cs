@@ -107,7 +107,11 @@ namespace CommissioningChecklistGenerator.UI
         private void OnSaveConfigurationClick(object sender, RoutedEventArgs e)
         {
             //update the static object after validation
-            Settings.Configuration.ApplicationConfiguration.ServerURL = this.ServerURL.Text;
+            Settings.Configuration.ApplicationConfiguration.ServerURL = this.URL;
+            Settings.Configuration.ApplicationConfiguration.AuthenticationURL = this.AuthenticationURL;
+            Settings.Configuration.ApplicationConfiguration.ClientID = this.ClientID;
+            Settings.Configuration.ApplicationConfiguration.EnableSSO = this.EnableSSO.IsChecked ?? false;
+
             //write to the configuration
             Settings.Configuration.WriteConfiguration();
             //return a positive result
