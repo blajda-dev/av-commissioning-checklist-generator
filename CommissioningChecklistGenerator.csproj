@@ -10,10 +10,22 @@
   </PropertyGroup>
   
   <ItemGroup>
+    <Compile Remove="NewFolder\**" />
+    <EmbeddedResource Remove="NewFolder\**" />
+    <None Remove="NewFolder\**" />
+    <Page Remove="NewFolder\**" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <None Remove="Authentication\Resources\sso-failure.html" />
+    <None Remove="Authentication\Resources\sso-login-success.html" />
+    <None Remove="Authentication\Resources\sso-logout-success.html" />
     <None Remove="Database\local.db" />
   </ItemGroup>
   
   <ItemGroup>
+    <EmbeddedResource Include="Authentication\Resources\sso-login-success.html" />
+    <EmbeddedResource Include="Authentication\Resources\sso-logout-success.html" />
     <EmbeddedResource Include="Database\local.db" />
   </ItemGroup>
 
@@ -37,6 +49,10 @@
 
   <ItemGroup>
     <Folder Include="res\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Authentication\Resources\sso-failure.html" />
   </ItemGroup>
 
 </Project>
