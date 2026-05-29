@@ -63,7 +63,7 @@ namespace CommissioningChecklistGenerator.UI
             }
         }
 
-        public string Error =>  String.Empty; 
+        public string Error => String.Empty; 
 
         public string this[string columnName]
         {
@@ -72,20 +72,23 @@ namespace CommissioningChecklistGenerator.UI
                 string result = String.Empty;
 
                 if (columnName == nameof(URL)) { result = Settings.Configuration.ValidateServerURL(URL); }
+                else if (columnName == nameof(AuthenticationURL)) { result = Settings.Configuration.ValidateServerURL(AuthenticationURL); }
 
                 return result;
             }
         }
 
-
         public ConfigurationWindow()
         {
             InitializeComponent();
+            //assign data context for data binding
             this.DataContext = this;
-            this.ServerURL.Text = Settings.Configuration.ApplicationConfiguration.ServerURL;
+
+            //subscribe to text changed events for validation
             this.ServerURL.TextChanged += OnServerURLChanged;
             this.AuthURL.TextChanged += OnServerURLChanged;
-            this.ServerURLComplete.Content = Settings.Configuration.ApplicationConfiguration.ServerURL + CommissioningChecklistGenerator.Database.DatabaseConstants.ServerDatabaseFilePath;
+            //assign the current configuration values to the properties bound to the text boxes
+            this.URL = Settings.Configuration.ApplicationConfiguration.ServerURL;
             //assign the current configuration value for SSO to the checkbox
             this.EnableSSO.IsChecked = Settings.Configuration.ApplicationConfiguration.EnableSSO;
             //assign these afterwards so that bindings update correctly
@@ -106,8 +109,8 @@ namespace CommissioningChecklistGenerator.UI
 
         private void OnServerURLChanged(object sender, TextChangedEventArgs e)
         {
-            this.SaveConfiguration.IsEnabled = !Validation.GetHasError(this.ServerURL);
-            this.ServerURLComplete.Content = Settings.Configuration.ApplicationConfiguration.ServerURL + CommissioningChecklistGenerator.Database.DatabaseConstants.ServerDatabaseFilePath;
+            this.SaveConfiguration.IsEnabled = IsDesiredConfigurationValid();
+            this.ServerURLComplete.Content = this.URL + CommissioningChecklistGenerator.Database.DatabaseConstants.ServerDatabaseFilePath;
         }
 
         private void OnSaveConfigurationClick(object sender, RoutedEventArgs e)
