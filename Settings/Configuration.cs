@@ -141,17 +141,13 @@ namespace CommissioningChecklistGenerator.Settings
         {
             string result = String.Empty;
 
-            bool valid = false;
-
             if (Uri.TryCreate(url, UriKind.Absolute, out Uri? uri))
             {
                 if (uri != null)
                 {
-                    if (uri.Scheme == Uri.UriSchemeHttps) { valid = true; }
+                    if (uri.Scheme != Uri.UriSchemeHttps) { result = "url must be https"; }
                 }
             }
-
-            if (!valid) { result = "please provide a valid https url"; }
 
             return result;
         }
@@ -184,7 +180,10 @@ namespace CommissioningChecklistGenerator.Settings
 
                 string? content = null;
 
-                try { content = await File.ReadAllTextAsync(filepath, token); }
+                try {
+                    Log.Debug($"{Prefix} reading data from configuration file");
+                    content = await File.ReadAllTextAsync(filepath, token); 
+                }
                 catch (Exception e) { Log.Fatal(e, $"{Prefix} attempting to read data from config file @ {filepath}"); }
 
                 if (content != null)
