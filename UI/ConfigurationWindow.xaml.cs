@@ -98,6 +98,12 @@ namespace CommissioningChecklistGenerator.UI
             DisableAuthenticationMembers(this.EnableSSO.IsChecked);
         }
 
+        private bool IsDesiredConfigurationValid()
+        {
+            if (this.EnableSSO.IsChecked == true) { return !Validation.GetHasError(this.ServerURL) && !Validation.GetHasError(this.AuthURL); }
+            else { return !Validation.GetHasError(this.ServerURL); }
+        }
+
         private void OnServerURLChanged(object sender, TextChangedEventArgs e)
         {
             this.SaveConfiguration.IsEnabled = !Validation.GetHasError(this.ServerURL);
