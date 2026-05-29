@@ -85,7 +85,37 @@ namespace CommissioningChecklistGenerator.Settings
         }
 
         [JsonProperty("client_id")]
-        public string ClientID { get; set; } = String.Empty;
+        public string ClientID {
+            get { return _clientID; }
+            set
+            {
+                if (value != null && value != String.Empty)
+                {
+                    string previous = _clientID;
+                    _clientID = value;
+                    if (previous != _clientID)
+                    {
+                        Log.Debug($"{Prefix} configured client id changed -> {_clientID}");
+                        OnPropertyChanged(nameof(ClientID));
+                    }
+                }
+            }
+        }
+
+        [JsonIgnore]
+        private bool _enableSSO = false;
+
+        [JsonProperty("use_sso")]
+        public bool EnableSSO
+        {
+            get { return _enableSSO; }
+            set
+            {
+                _enableSSO = value;
+                Log.Debug($"{Prefix} sso authentication -> {(_enableSSO ? "enabled" : "disabled")}");
+                OnPropertyChanged(nameof(EnableSSO));
+            }
+        }
 
         public string this[string columnName]
         {
