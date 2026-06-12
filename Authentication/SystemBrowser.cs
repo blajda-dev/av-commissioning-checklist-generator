@@ -53,7 +53,7 @@ namespace CommissioningChecklistGenerator.Authentication
             { 
                 NameValueCollection parameters = HttpUtility.ParseQueryString(url?.Query ?? String.Empty);
                 AuthorizationResponse response = ParseResponse(parameters);
-                Log.Debug($"{Prefix} autthorization response -> {response}");
+                Log.Debug($"{Prefix} authorization response -> {response}");
 
                 switch (response)
                 {
