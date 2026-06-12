@@ -87,13 +87,19 @@ namespace CommissioningChecklistGenerator.UI
             //subscribe to text changed events for validation
             this.ServerURL.TextChanged += OnServerURLChanged;
             this.AuthURL.TextChanged += OnServerURLChanged;
-            //assign the current configuration values to the properties bound to the text boxes
+
+            //assign values from config, then assign to the window controls
             this.URL = Settings.Configuration.ApplicationConfiguration.ServerURL;
+            this.ServerURL.Text = this.URL;
+
+            this.AuthenticationURL = Settings.Configuration.ApplicationConfiguration.AuthenticationURL;
+            this.AuthURL.Text = this.AuthenticationURL;
+
+            this.ClientID = Settings.Configuration.ApplicationConfiguration.ClientID;
+            this.Client.Text = this.ClientID;
+
             //assign the current configuration value for SSO to the checkbox
             this.EnableSSO.IsChecked = Settings.Configuration.ApplicationConfiguration.EnableSSO;
-            //assign these afterwards so that bindings update correctly
-            this.AuthenticationURL = Settings.Configuration.ApplicationConfiguration.AuthenticationURL;
-            this.ClientID = Settings.Configuration.ApplicationConfiguration.ClientID;
 
             Log.Debug($"{Prefix} url -> {this.ServerURL.Text} sso -> {this.EnableSSO.IsChecked} auth url -> {this.AuthURL.Text} client -> {this.Client.Text}");
 
