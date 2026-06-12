@@ -29,7 +29,7 @@ namespace CommissioningChecklistGenerator.Authentication
 
         private static HttpClient? TokenRefreshClient;
 
-        private static string? IdentityToken = null;
+        private static string IdentityToken = "";
 
         public static bool IsAuthenticated { get; internal set; } = false;
 
@@ -97,10 +97,14 @@ namespace CommissioningChecklistGenerator.Authentication
         {
             if (OpenAuthClient != null && IsInitialized && IsAuthenticated)
             {
-                LogoutResult result = await OpenAuthClient.LogoutAsync(new LogoutRequest() { IdTokenHint = IdentityToken });
+                LogoutResult result = await OpenAuthClient.LogoutAsync(new LogoutRequest() {  IdTokenHint = IdentityToken});
 
                 if (result.IsError) { Log.Warning($"{Prefix} logout error -> {(result.Error != String.Empty ? result.Error : "success")} {(result.ErrorDescription != String.Empty ? result.ErrorDescription : "")}"); }
-                else { Log.Information($"{Prefix} logout successful"); }
+                else
+                { 
+                    Log.Information($"{Prefix} logout successful");
+                    IdentityToken = "";
+                }
 
                 IsAuthenticated = false;
             }
