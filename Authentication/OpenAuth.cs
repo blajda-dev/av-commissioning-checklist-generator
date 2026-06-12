@@ -72,6 +72,8 @@ namespace CommissioningChecklistGenerator.Authentication
                         IsAuthenticated = true;
 
                         Log.Information($"{Prefix} login successful -> token expires: {result.AccessTokenExpiration.ToLocalTime().ToString()}");
+                        Log.Debug($"{Prefix} application authenticated with user -> {result.User?.Identity?.Name}");
+
                         IdentityToken = result.IdentityToken;
                         Log.Debug($"{Prefix} storing identity token for logout requests");
 
