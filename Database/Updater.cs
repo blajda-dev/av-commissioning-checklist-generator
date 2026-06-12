@@ -143,6 +143,7 @@ namespace CommissioningChecklistGenerator.Database
                     await Task.Run(async () =>
                     {
                         Log.Information($"{Prefix} attempting to get latest database from server @ {Configuration.ApplicationConfiguration.ServerURL}");
+
                         (bool result, string reason) = await PerformDatabaseUpdate(progress);
                         DatabaseDownloadCompleted(result, reason);
                     });
@@ -162,15 +163,28 @@ namespace CommissioningChecklistGenerator.Database
             bool result = false;
             string reason = "unknown failure";
 
-            //add the bearer token if authentication is enabled
-            if (Settings.Configuration.ApplicationConfiguration.EnableSSO) { 
-                Log.Debug($"{Prefix} authentication enabled, adding bearer token to request header");
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Authentication.OpenAuth.Token); 
-            }
+            HttpClient? targetClient = client;
+            if (Settings.Configuration.ApplicationConfiguration.EnableSSO) { targetClient = Authentication.OpenAuth.TokenRefreshClient; }
 
+            if (targetClient == null)
+            {
+
+                if (Authentication.OpenAuth.IsAuthenticated)
+                {
+                    Log.Fatal($"{Prefix} target client cannot be null");
+                    reason = "A fatal error has prevented the application from authenticating against the SSO authority";
+                }
+                else
+                {
+                    Log.Warning($"{Prefix} the user is not authenticated to access this resource");
+                    reason = "You have not been granted access to this resource according to the SSO authority";
+                }
+            }
+            else
+            {
             try
             {
-                using (HttpResponseMessage response = await client.GetAsync(GenerateRemoteDatabaseLocation(), HttpCompletionOption.ResponseHeadersRead))
+                    using (HttpResponseMessage response = await targetClient.GetAsync(GenerateRemoteDatabaseLocation(), HttpCompletionOption.ResponseHeadersRead))
                 {
                     progress += 5;
                     reporter.Report(new ProgressUpdate(progress, $"Contacted Server @ {Configuration.ApplicationConfiguration.ServerURL}"));
@@ -191,7 +205,8 @@ namespace CommissioningChecklistGenerator.Database
 
                             string? tempFile = await DownloadDatabaseToTemporaryFile(reporter, response);
 
-                            if (tempFile != null) {
+                                if (tempFile != null)
+                                {
                                 (bool valid, reason) = await Querier.ValidateTemporaryDatabase(tempFile);
 
                                 if (valid)
@@ -201,7 +216,8 @@ namespace CommissioningChecklistGenerator.Database
                                     result = renamed;
                                 }
                             }
-                            else { 
+                                else
+                                {
                                 Log.Fatal($"{Prefix} unable to move temporary database!");
                                 reason = "Unable to write database to a temporary file";
                             }
@@ -226,9 +242,11 @@ namespace CommissioningChecklistGenerator.Database
                     reporter.Report(new ProgressUpdate(progress, response.IsSuccessStatusCode ? "Completed" : "Failed"));
                 }
             }
-            catch(Exception e) {
+                catch (Exception e)
+                {
                 reason = $"Failed to contact database @ {Configuration.ApplicationConfiguration.ServerURL}";
                 Log.Fatal(e, $"{Prefix} requesting database from server @ {GenerateRemoteDatabaseLocation()}"); 
+            }
             }
 
             return (result, reason);

@@ -27,7 +27,7 @@ namespace CommissioningChecklistGenerator.Authentication
 
         private static OidcClient? OpenAuthClient;
 
-        private static HttpClient? TokenRefreshClient;
+        public static HttpClient? TokenRefreshClient { get; private set; }
 
         private static string IdentityToken = "";
 
