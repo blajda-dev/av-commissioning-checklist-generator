@@ -70,7 +70,8 @@ namespace CommissioningChecklistGenerator.Authentication
                     else
                     {
                         IsAuthenticated = true;
-                        Token = result.AccessToken;
+
+                        Log.Information($"{Prefix} login successful -> token expires: {result.AccessTokenExpiration.ToLocalTime().ToString()}");
                         IdentityToken = result.IdentityToken;
                         Log.Debug($"{Prefix} storing identity token for logout requests");
 
