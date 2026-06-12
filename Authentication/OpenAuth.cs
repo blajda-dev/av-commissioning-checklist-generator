@@ -31,7 +31,7 @@ namespace CommissioningChecklistGenerator.Authentication
 
         private static string? IdentityToken = null;
 
-        public static string? Token { get; private set; } = null;
+        public static bool IsAuthenticated { get; internal set; } = false;
 
         public static bool IsAuthenticated { get; private set; } = false;
 
@@ -72,9 +72,15 @@ namespace CommissioningChecklistGenerator.Authentication
                         IsAuthenticated = true;
                         Token = result.AccessToken;
                         IdentityToken = result.IdentityToken;
-                        Log.Information($"{Prefix} login successful -> token expires: {result.AccessTokenExpiration.ToLocalTime().ToString()}");
+                        Log.Debug($"{Prefix} storing identity token for logout requests");
 
-                        HttpMessageHandler refreshHandler = result.RefreshTokenHandler;
+                        DelegatingHandler refreshHandler = result.RefreshTokenHandler;
+                        AuthenticationStateUpdateHandler authenticationHandler = new AuthenticationStateUpdateHandler();
+
+                        refreshHandler.InnerHandler = authenticationHandler;
+                        Log.Debug($"{Prefix} assigned refresh token -> auth handler");
+                        authenticationHandler.InnerHandler = new HttpClientHandler();
+                        Log.Debug($"{Prefix} assigned auth handler -> inner handler");
                         TokenRefreshClient = new HttpClient(refreshHandler, disposeHandler: true);
                         Log.Information($"{Prefix} token refresh client initialized with refresh token handler");
                     }
