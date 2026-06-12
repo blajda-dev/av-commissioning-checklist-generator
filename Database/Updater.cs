@@ -85,7 +85,7 @@ namespace CommissioningChecklistGenerator.Database
         {
             Log.Debug($"{Prefix} database download timer expired");
 
-            DownloadDatabase();
+            _ = DownloadDatabase();
         }
 
         /// <summary>
@@ -182,71 +182,71 @@ namespace CommissioningChecklistGenerator.Database
             }
             else
             {
-            try
-            {
-                    using (HttpResponseMessage response = await targetClient.GetAsync(GenerateRemoteDatabaseLocation(), HttpCompletionOption.ResponseHeadersRead))
+                try
                 {
-                    progress += 5;
-                    reporter.Report(new ProgressUpdate(progress, $"Contacted Server @ {Configuration.ApplicationConfiguration.ServerURL}"));
-
-                    Log.Debug($"{Prefix} able to contact server @ {Configuration.ApplicationConfiguration.ServerURL}");
-
-                    if (response.IsSuccessStatusCode)
+                    using (HttpResponseMessage response = await targetClient.GetAsync(GenerateRemoteDatabaseLocation(), HttpCompletionOption.ResponseHeadersRead))
                     {
-                        if (response.Content.Headers.ContentLength != 0)
+                        progress += 5;
+                        reporter.Report(new ProgressUpdate(progress, $"Contacted Server @ {Configuration.ApplicationConfiguration.ServerURL}"));
+
+                        Log.Debug($"{Prefix} able to contact server @ {Configuration.ApplicationConfiguration.ServerURL}");
+
+                        if (response.IsSuccessStatusCode)
                         {
-                            progress += 5;
-                            reporter.Report(new ProgressUpdate(progress, "Success Response Requesting Database File"));
-                            Log.Information($"{Prefix} succeeded in request database file from server @ {GenerateRemoteDatabaseLocation()}");
-                            //wait for the checklist generator to be complete if running so we dont corrupt the database by writing to the file while in use
-                            Log.Information($"{Prefix} waiting for generator to finish using database before beginning update");
+                            if (response.Content.Headers.ContentLength != 0)
+                            {
+                                progress += 5;
+                                reporter.Report(new ProgressUpdate(progress, "Success Response Requesting Database File"));
+                                Log.Information($"{Prefix} succeeded in request database file from server @ {GenerateRemoteDatabaseLocation()}");
+                                //wait for the checklist generator to be complete if running so we dont corrupt the database by writing to the file while in use
+                                Log.Information($"{Prefix} waiting for generator to finish using database before beginning update");
 
-                            await Generator.Idle.WaitAsync(new TimeSpan(0, 0, 5));
+                                await Generator.Idle.WaitAsync(new TimeSpan(0, 0, 5));
 
-                            string? tempFile = await DownloadDatabaseToTemporaryFile(reporter, response);
+                                string? tempFile = await DownloadDatabaseToTemporaryFile(reporter, response);
 
                                 if (tempFile != null)
                                 {
-                                (bool valid, reason) = await Querier.ValidateTemporaryDatabase(tempFile);
+                                    (bool valid, reason) = await Querier.ValidateTemporaryDatabase(tempFile);
 
-                                if (valid)
-                                {
-                                    bool renamed = await RenameTemporaryDatabase(reporter, tempFile);
-                                    Log.Information($"{Prefix} database file move/rename operations {(renamed ? "succeeded" : "failed")}");
-                                    result = renamed;
+                                    if (valid)
+                                    {
+                                        bool renamed = await RenameTemporaryDatabase(reporter, tempFile);
+                                        Log.Information($"{Prefix} database file move/rename operations {(renamed ? "succeeded" : "failed")}");
+                                        result = renamed;
+                                    }
                                 }
-                            }
                                 else
                                 {
-                                Log.Fatal($"{Prefix} unable to move temporary database!");
-                                reason = "Unable to write database to a temporary file";
+                                    Log.Fatal($"{Prefix} unable to move temporary database!");
+                                    reason = "Unable to write database to a temporary file";
+                                }
+                            }
+                            else
+                            {
+                                reason = $"The downloaded file is empty!";
+
+                                Log.Error($"The server provided a file of size {response.Content.Headers.ContentLength}, which is invalid");
                             }
                         }
                         else
                         {
-                            reason = $"The downloaded file is empty!";
+                            Log.Error($"{Prefix} server responded with error: {(int)response.StatusCode} ({response.StatusCode}) when attempting to retrieve database @ {GenerateRemoteDatabaseLocation()}");
 
-                            Log.Error($"The server provided a file of size {response.Content.Headers.ContentLength}, which is invalid");
+                            reason = $"The server responded with {(int)response.StatusCode}: {response.ReasonPhrase}, when attempting to retrieve database @ {GenerateRemoteDatabaseLocation()}";
                         }
+
+                        Log.Information($"{Prefix} database update {(result ? "completed" : "failed")}");
+
+                        progress = 100;
+                        reporter.Report(new ProgressUpdate(progress, response.IsSuccessStatusCode ? "Completed" : "Failed"));
                     }
-                    else
-                    {
-                        Log.Error($"{Prefix} server responded with error: {(int)response.StatusCode} ({response.StatusCode}) when attempting to retrieve database @ {GenerateRemoteDatabaseLocation()}");
-
-                        reason = $"The server responded with {(int)response.StatusCode}: {response.ReasonPhrase}, when attempting to retrieve database @ {GenerateRemoteDatabaseLocation()}";
-                    }
-
-                    Log.Information($"{Prefix} database update {(result ? "completed" : "failed")}");
-
-                    progress = 100;
-                    reporter.Report(new ProgressUpdate(progress, response.IsSuccessStatusCode ? "Completed" : "Failed"));
                 }
-            }
                 catch (Exception e)
                 {
-                reason = $"Failed to contact database @ {Configuration.ApplicationConfiguration.ServerURL}";
-                Log.Fatal(e, $"{Prefix} requesting database from server @ {GenerateRemoteDatabaseLocation()}"); 
-            }
+                    reason = $"Failed to contact database @ {Configuration.ApplicationConfiguration.ServerURL}";
+                    Log.Fatal(e, $"{Prefix} requesting database from server @ {GenerateRemoteDatabaseLocation()}");
+                }
             }
 
             return (result, reason);
