@@ -33,8 +33,6 @@ namespace CommissioningChecklistGenerator.Authentication
 
         public static bool IsAuthenticated { get; internal set; } = false;
 
-        public static bool IsAuthenticated { get; private set; } = false;
-
         public static bool IsInitialized { get { return (OpenAuthClient != null); } }
 
         public static async Task Initialize(string auth, string id)
