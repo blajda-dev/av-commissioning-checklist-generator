@@ -231,6 +231,7 @@ namespace CommissioningChecklistGenerator.Settings
                         try
                         {
                             File.Move(ConfigurationTemporaryLocation, ConfigurationLocation, true);
+                            Log.Debug($"{Prefix} moved temp config @ {ConfigurationTemporaryLocation} to permanent config {ConfigurationLocation}");
                             success = true;
                         }
                         catch (Exception e) { Log.Fatal(e, $"{Prefix} attmempting to move temp config to permanent config"); }
