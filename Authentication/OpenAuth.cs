@@ -85,7 +85,7 @@ namespace CommissioningChecklistGenerator.Authentication
                         authenticationHandler.InnerHandler = new HttpClientHandler();
                         Log.Debug($"{Prefix} assigned auth handler -> inner handler");
                         TokenRefreshClient = new HttpClient(refreshHandler, disposeHandler: true);
-                        Log.Information($"{Prefix} token refresh client initialized with refresh token handler");
+                        Log.Information($"{Prefix} token refresh client created/updated");                
                     }
                 }
                 catch (InvalidOperationException e) { Log.Fatal(e, $"{Prefix} login failed"); }
