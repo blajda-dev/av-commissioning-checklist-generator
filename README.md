@@ -12,7 +12,7 @@ For example, a system expander *(denoted by the prefix **EXP**)* can be capable 
 
 ### Application Settings
 
-In the toolbar you will need to open the Settings window to configure the server url to download the remote database. An example database is hosted at: https://blajda-gen2.loginto.me. Before closing the settings window, save the configuration and this URL will be used in the future. You'll only need to do this once on startup or if the file ever gets deleted somehow.
+In the toolbar you will need to open the Settings window to configure the server url to download the remote database. An example database is hosted at: https://blajda-gen2.loginto.me. On the first startup, the application will show the configuration window before you can start using the application. This configuration will be saved to disk and used in the future. You will enable or disable SSO here; and you'll need to configure your database server accordingly.
 
 ### Database Configuration
 
@@ -30,40 +30,52 @@ parse out what devices it cares about, nor can it later on query the database to
 		- XXX-NNN
 			- XXX is an abbreviation for the device
 				- CPR, MON, TPL
+				- can be more than 3 characters
 			- NNN is a numeric identifier of the instance of the unit in the system
 				- 101, 001
+				- can be more than 3 digits
 			- see source code for regex pattern
-	- *the prefixes used here **MUST** exist in the database to retrieve device **PREFIX** commissioning tasks*
-- MAKE / MFG
+	- *the prefixes used here **MUST ALSO EXIST IN THE DATABASE** to retrieve device **PREFIX** level commissioning tasks*
+- MAKE **or** MFG
 	- the manufacturer of the device
 	- this is just part of the database relationships, not used when generating tasks
-- MODEL / PN
+- MODEL **or** PN
 	- the model or part number of the device
 	- when a checklist is generated, the application checks to see if a device matching the model exists. 
-		- *if commisioning tasks have been assigned at the device **MODEL** level, these override any device **PREFIX** commissioning tasks*
-- DESCRIPTION / DESC
-	- not as important, but injected into the checklist in the device's checklist section
+		- *if commisioning tasks have been assigned at the device **MODEL** level, these override any device **PREFIX** level commissioning tasks*
+- DESCRIPTION **or** DESC
+	- not as important, but injected into the checklist in the device's checklist section, and may be useful to the QA or Field Engineer
 
 ## Usage
 
 ### Startup
 
-The application will open the settings window when you run it for the first time prompting you to configure the server url that is hosting the sqlite database. If you dont configure this, youll never download updates and only have the embedded version of the database that the app was shipped with, which is limited in is functionality at this time. Configure this url to point at your server. 
+The application will open the settings window when you run it for the first time prompting you to configure the server url that is hosting the sqlite database. If you dont configure this, youll never download updates and only have the embedded version of the database that the app was shipped with, which is limited in is functionality at this time. Configure this url to point at your server. If your server is configured for SSO authentication youll also need to configure those settings here.
 
-*(there is a field that auto updates to indicate where the final file should be located on the server, as you input the server URL)*
+*NOTE: (the final database path is locked within the application. The text field beneath the server URL will update to show where you should host the database file on your server.)*
 
 ### Toolbar
 
-There is a toolbar with 3 options:
+The application toolbar has 3 options:
 
 - Help
 	- opens a small message box that hopefully provides assistance in using the app
 - Settings
-	- allows for you to adjust the server URL that hosts the SQLite database
+	- allows you to configure the following
+		- database server base url
+			- the url to the server that hosts the database. the final database location is locked to **/db/latest/database.db**
+				- the window will auto generate the final url based on this input, and will validate that your input is a valid url
+				- you will not be able to save the configuration without a valid url here
+		- use sso
+			- sso authority endpoint
+				- the base url of the authority to use for sso authentication. this authority must support openid-connect using the standard .well-known 
+			- sso client id
+				- the client id to use when authenticating to the authority
+				- there is no validation on this input, as the client id could be anything
 - Download Database
 	- this is a manual override to immediately download a database update
-	- use this as needed, by default the app will auto-download every hour while the app is running.
-	- a progress window will indicate download progress, and disable the download button until complete
+	- use this as needed, by default the app will auto-download every hour while the app is running
+	- a progress window will indicate download progress, and disable the download button until the download is complete or has failed
 
 ### Generating Checklists
 
@@ -73,36 +85,36 @@ To begin you'll need to import the devices from the system that can be configure
 configuration file.
 
 1. Import CAD File
-	1. find the system DWG or DXF file from the CAD folder, create a copy and import into the application.
+	1. find the system DWG or DXF file from the CAD folder. Navigate to this file when the provided file dialog opens.
 1. Import JSON File
-	1. if you have used the generator previously on an identical system or are generating them for multiple rooms in a system you can import the json file, which will be quicker than parsing the DXF drawing file.
+	1. if you have used the generator previously on an identical system or are generating them for multiple rooms in a system you can import the json file, which will be quicker than parsing the DXF drawing file. Navigate to this file when the file dialog opens.
 	
 #### Step 2 - System Capabilities
 
 After you have imported the devices, you need to indicate what other capabilities the system has. There are 4 options:
 
 - Audio Conferencing
-	- conferencing using a traditional POTS or VOIP interface
+	- conferencing using a traditional POTS or VOIP connection *(typically via an installed DSP)*
 - Video Conferencing
-	- conferencing using a traditional hard codec
+	- conferencing using a traditional hard codec *(Cisco, Polycom, Lifesize, etc)*
 - Soft Conferencing
-	- conferencing using an installed pc, or byod device running Microsoft Teams, Zoom, Webex, etc.
+	- conferencing using an installed pc, or byod device *(Microsoft Teams, Zoom, Webex, etc)*
 - Room Combining
-	- either master/slave or true combining functionality across multiple rooms
+	- either master/slave or true dynamic combining functionality
 
 #### Step 3 - Save System Configuration
 
 If you want to save the system configuration for re-use later, you can export the system devices and functionality to a json file that you can re-use later. Parsing the DXF file can take some time,
-so using the configuration file will save time as it reads in the file directly. This step is optional.
+so using the configuration file will save time as it reads in the file directly. This step is optional, but handy if you have a collection of rooms that are identical but need a checklist for each.
 
 #### Step 4 - Generate Checklist
 
-Finally, you can generate the checklist. This can take some time, so a progress window will show you the current step. Once completed, a file dialog will open to prompt you to save the excel checklist
-to disk with the project number so that field engineers or project managers can easily identify the file.
+Lastly, its time to generate the checklist. This can take some time, so a progress window will show you the current step. Once completed, a file dialog will open to prompt you to save the excel checklist
+to disk with the project number so other team members can easily identify the file.
 
 #### Step 5 - Profit ?
 
-After this, its up to you, either complete or hand off the checklist to the QA or Field Engineer
+After this, its up to you, either complete or hand off the checklist to the QA or Field Engineer, ideally this file should first be uploaded to sharepoint so that it can be accessed by the entire project team and updated in real-time.
 
 ## Checklist
 
@@ -125,10 +137,10 @@ The checklist is has pre-built conditional formatting that will colorize the row
 - Room Combining
 	- tasks specific to systems capable of combining
 
-These worksheets will be generated automatically, or left out if no matching devies are found with such capability to warrant generating the worksheet
+These worksheets will be generated automatically, or left out if no matching devies are found with such capability to warrant generating the worksheet.
 
 ## Troubleshooting
 
-The database, configuration, and logs are all stored in here (type into a file explorer) -> %LOCALAPPDATA%/CommissioningChecklistGenerator/
+The database, configuration file, and logs are all stored in here (type into a file explorer) -> %LOCALAPPDATA%/CommissioningChecklistGenerator/
 
-The application should handle all exceptions, and output them in the logs, or show a messagebox if something goes terribly wrong.
+The application should handle all exceptions, and output the details of any errors or exceptions in the logs. A messagebox should be shown when or if an error occurs that a user should know about, either to resolve it or to provide the details to the staff managing the database server.
