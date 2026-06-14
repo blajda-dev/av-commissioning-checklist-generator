@@ -123,7 +123,7 @@ The checklist is has pre-built conditional formatting that will colorize the row
 - Sources
 	- any audio or video device that acts as an input endpoint of content into the system
 - Destinations
-	- any audio or video device that acts as an output endpoing of content from the sytem
+	- any audio or video device that acts as an output endpoint of content from the sytem
 - User Interfaces
 	- button panels, keypads, touchpanels, ipads, etc.
 - Controlled Devices
