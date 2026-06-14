@@ -5,8 +5,9 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:CommissioningChecklistGenerator"
         mc:Ignorable="d"
-       d:Title="Generating..." MinHeight="200" MinWidth="300" MaxHeight="250" MaxWidth="350"
-       Style="{ StaticResource ProgressWindowStyle }">
+        d:Title="Generating..." MinHeight="200" MinWidth="300" MaxHeight="250" MaxWidth="350"
+        Icon="pack://application:,,,/ui/icons/icon_color.ico"
+        Style="{ StaticResource ProgressWindowStyle }">
     <Grid Margin="5">
         <Grid.RowDefinitions>
             <RowDefinition Height="1*"/>

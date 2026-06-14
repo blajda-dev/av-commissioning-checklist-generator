@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:database="clr-namespace:CommissioningChecklistGenerator.Database"
         mc:Ignorable="d"
+        Icon="pack://application:,,,/ui/icons/icon_color.ico"
         Title="Commissioning Checklist Generator" MinHeight="550" MinWidth="310" SizeToContent="WidthAndHeight">
     <Border Margin="5">
         <Grid x:Name="MainGrid">

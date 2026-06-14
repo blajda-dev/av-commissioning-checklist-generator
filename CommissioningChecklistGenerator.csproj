@@ -7,6 +7,8 @@
     <UseWPF>true</UseWPF>
 	<IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
 	<IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+	<PackageIcon>ui\icons\icon_color.ico</PackageIcon>
+	<ApplicationIcon>ui\icons\icon_color.ico</ApplicationIcon>
   </PropertyGroup>
   
   <ItemGroup>
@@ -21,6 +23,29 @@
     <None Remove="Authentication\Resources\sso-login-success.html" />
     <None Remove="Authentication\Resources\sso-logout-success.html" />
     <None Remove="Database\local.db" />
+    <None Remove="UI\Icons\icon_black.ico" />
+    <None Remove="UI\Icons\icon_cloud_download.ico" />
+    <None Remove="UI\Icons\icon_convert.ico" />
+    <None Remove="UI\Icons\icon_settings.ico" />
+  </ItemGroup>
+ 
+  
+  <ItemGroup>
+    <Resource Include="UI\Icons\icon_black.ico">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="UI\Icons\icon_cloud_download.ico">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="UI\Icons\icon_color.ico">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="UI\Icons\icon_convert.ico">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="UI\Icons\icon_settings.ico">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
   </ItemGroup>
   
   <ItemGroup>
@@ -53,6 +78,17 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Authentication\Resources\sso-failure.html" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="UI\Icons\icon_color.ico">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Update="UI\icon_color.ico">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>

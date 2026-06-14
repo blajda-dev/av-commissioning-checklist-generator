@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:data="clr-namespace:CommissioningChecklistGenerator"
         mc:Ignorable="d"
+        Icon="pack://application:,,,/ui/icons/icon_settings.ico"
         Title="Application Settings" MinHeight="400" MinWidth="500" SizeToContent="WidthAndHeight">
     <!--MinHeight="450"-->
     <Border Margin="5">

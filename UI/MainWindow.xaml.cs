@@ -455,7 +455,7 @@ namespace CommissioningChecklistGenerator.UI
                 Project.Clear();
 
                 Log.Information($"{Prefix} attempting to create progress object to provide status of parsing dxf document @ {dialog.FileName}");
-                ProgressWindow window = new ProgressWindow(this, "Starting", $"Extracting commissionable devices from DXF drawing: {Path.GetFileName(dialog.FileName)}", "Parse DXF File");
+                ProgressWindow window = new ProgressWindow(this, UI.Icons.Resources.ConvertIcon, "Starting", $"Extracting commissionable devices from DXF drawing: {Path.GetFileName(dialog.FileName)}", "Parse DXF File");
                 Progress<ProgressUpdate> progress = new Progress<ProgressUpdate>(status => { window.UpdateProgress(status); });
                 window.Show();
 
@@ -606,7 +606,7 @@ namespace CommissioningChecklistGenerator.UI
         {
             ((Button)sender).IsEnabled = false;
             //need to update this to function with the new local database
-            ProgressWindow window = new ProgressWindow(this, "Generate Commissioning Tasks For Devices", "Generating Formatted Excel Comissioning Checklist", "Generate Checklist");
+            ProgressWindow window = new ProgressWindow(this, UI.Icons.Resources.BlackChecklistIcon, "Generate Commissioning Tasks For Devices", "Generating Formatted Excel Comissioning Checklist", "Generate Checklist");
             Progress<ProgressUpdate> progress = new Progress<ProgressUpdate>(status => { window.UpdateProgress(status); });
             window.Show();
             XLWorkbook? generationResult = await Generator.GenerateChecklist(progress, Project);

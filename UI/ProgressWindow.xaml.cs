@@ -1,5 +1,6 @@
 ﻿using CommissioningChecklistGenerator;
 using CommissioningChecklistGenerator.UI;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -23,6 +24,7 @@ namespace CommissioningChecklistGenerator.UI
     /// </summary>
     public partial class ProgressWindow : Window
     {
+        private const string Prefix = "[ProgressWindow]";
         public ProgressWindow(Window owner)
         {
             InitializeComponent();
@@ -30,8 +32,11 @@ namespace CommissioningChecklistGenerator.UI
             WindowStartupLocation = WindowStartupLocation.CenterOwner;
         }
 
-        public ProgressWindow(Window owner, string task, string message, string title) : this(owner)
+        public ProgressWindow(Window owner, ImageSource? icon, string task, string message, string title) : this(owner)
         {
+            if (icon != null) { Icon = icon; }
+            else { Log.Debug($"{Prefix} not setting icon"); }
+
             MessageMain.Text = message;
             Title = title;
             CurrentTask.Text = task;

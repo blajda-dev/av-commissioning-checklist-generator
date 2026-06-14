@@ -6,6 +6,7 @@
         xmlns:extension="clr-namespace:CommissioningChecklistGenerator.Extensions"
         xmlns:av="clr-namespace:CommissioningChecklistGenerator.ProjectModel"
         mc:Ignorable="d"
+        Icon="pack://application:,,,/ui/icons/icon_settings.ico"
         Height="300" Width="600
         ">
     <Grid x:Name="MainGrid">

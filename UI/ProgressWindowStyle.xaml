@@ -18,20 +18,11 @@
                                 <ColumnDefinition />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <Border
-                        Grid.Row="0"
-                        Grid.ColumnSpan="2"
-                        Background="{DynamicResource ColorBlack }">
-                                <Grid>
-                                    <TextBlock
-                                Grid.Column="1"
-                                Margin="10,0,0,0"
-                                HorizontalAlignment="Left"
-                                VerticalAlignment="Center"
-                                FontSize="16"
-                                Foreground="{DynamicResource ColorBlack }"
-                                Text="{TemplateBinding Title}" />
-                                </Grid>
+                            <Border Grid.Row="0" Grid.ColumnSpan="2" Background="{DynamicResource ColorBlack }">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0,0,0">
+                                    <Image Source="{TemplateBinding Icon}" Width="16" Height="16" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"></Image>
+                                    <TextBlock Margin="8,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="16" Foreground="{DynamicResource ColorBlack }" Text="{TemplateBinding Title}"></TextBlock>
+                                </StackPanel>
                             </Border>
                             <ContentPresenter Grid.Row="1" />
                         </Grid>

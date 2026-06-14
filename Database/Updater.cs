@@ -137,11 +137,11 @@ namespace CommissioningChecklistGenerator.Database
             if (Configuration.ApplicationConfiguration.ServerURLValid)
             {
                 App.Current.Dispatcher.Invoke(async () => {
-                    ProgressWindow window = new ProgressWindow(App.Window, "Auto-Download Database", $"Auto-Downloading Database from {Configuration.ApplicationConfiguration.ServerURL}", "Download Database");
+                    ProgressWindow window = new ProgressWindow(App.Window, UI.Icons.Resources.CloudDownloadIcon, "Auto-Download Database", $"Auto-Downloading Database from {Configuration.ApplicationConfiguration.ServerURL}", "Download Database");
                     Progress<ProgressUpdate> progress = new Progress<ProgressUpdate>(status => { window.UpdateProgress(status); });
                     window.Show();
                     await Task.Run(async () =>
-                    {
+                    { 
                         Log.Information($"{Prefix} attempting to get latest database from server @ {Configuration.ApplicationConfiguration.ServerURL}");
 
                         (bool result, string reason) = await PerformDatabaseUpdate(progress);
