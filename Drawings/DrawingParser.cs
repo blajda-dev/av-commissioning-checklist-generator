@@ -96,7 +96,7 @@ namespace CommissioningChecklistGenerator.Drawings
 
                 return result;
             }
-            else { return new DrawingParsedEventArgs(false, $"Unable To Open DXF Drawing @ {path}", null);  }
+            else { return new DrawingParsedEventArgs(false, $"Unable To Open {Path.GetExtension(path).ToUpperInvariant()} Drawing @ {path}", null);  }
         }
 
         private static List<Device> GenerateDevicesFromDrawing(IProgress<ProgressUpdate> reporter, CadDocument document)
