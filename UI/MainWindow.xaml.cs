@@ -454,8 +454,8 @@ namespace CommissioningChecklistGenerator.UI
                 Log.Information($"{Prefix} attempting to clear the current av system");
                 Project.Clear();
 
-                Log.Information($"{Prefix} attempting to create progress object to provide status of parsing dxf document @ {dialog.FileName}");
-                ProgressWindow window = new ProgressWindow(this, UI.Icons.Resources.ConvertIcon, "Starting", $"Extracting commissionable devices from DXF drawing: {Path.GetFileName(dialog.FileName)}", "Parse DXF File");
+                Log.Information($"{Prefix} attempting to create progress object to provide status of parsing document @ {dialog.FileName}");
+                ProgressWindow window = new ProgressWindow(this, UI.Icons.Resources.ConvertIcon, "Starting", $"Extracting commissionable devices from drawing: {Path.GetFileName(dialog.FileName)}", "Parse Drawing File");
                 Progress<ProgressUpdate> progress = new Progress<ProgressUpdate>(status => { window.UpdateProgress(status); });
                 window.Show();
 
