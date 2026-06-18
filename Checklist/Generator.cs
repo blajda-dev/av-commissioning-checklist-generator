@@ -171,7 +171,7 @@ namespace CommissioningChecklistGenerator.Checklist
                         progress += 5;
                         reporter.Report(new ProgressUpdate(progress, "Workbook Created..."));
                     }
-                    catch (Exception e) { MessageBox.Show(e.Message); }
+                    catch (Exception e) { MessageBox.Show(App.Window, e.Message); }
                     finally
                     {
                         //show busy dialog
