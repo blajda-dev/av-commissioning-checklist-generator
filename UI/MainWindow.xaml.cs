@@ -463,8 +463,9 @@ namespace CommissioningChecklistGenerator.UI
 
                 if (result.Success && result.System != null) { Project = result.System; }
                 
-                MessageBox.Show(this, $"{result.Reason}", $"Operation {(result.Success ? "Success" : "Failure")}", MessageBoxButton.OK, result.Success ? MessageBoxImage.Information : MessageBoxImage.Exclamation);
                 window.Close();
+                
+                MessageBox.Show(this, $"{result.Reason}", $"Operation {(result.Success ? "Success" : "Failure")}", MessageBoxButton.OK, result.Success ? MessageBoxImage.Information : MessageBoxImage.Exclamation);
             }
             ((Button)sender).IsEnabled = true;
         }
