@@ -165,14 +165,14 @@ namespace CommissioningChecklistGenerator.Database
                 catch (Exception e)
                 {
                     Log.Fatal(e, $"{Prefix} failed to open database @ {conn.DataSource}");
-                    MessageBox.Show(App.Window, $"Exception: {e.Message}\r\rHas caused a failure to open the desired database: {conn.DataSource}", "Failure To Open Database");
+                    MessageBox.Show(App.Window, $"Exception: {e.Message}\r\rHas caused a failure to open the desired database: {conn.DataSource}", "Failure To Open Database", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
 
                 if (open) { Log.Information($"{Prefix} database @ {conn.DataSource} is {Connection.State.ToString().ToLower()}!"); }
             }
             else {
                 Log.Fatal($"{Prefix} database file @ {conn.DataSource} does not exist -> Cannot open a file that does not exist.");
-                MessageBox.Show(App.Window, $"File Does Not Exist: {conn.DataSource}\r\rCannot open a file that does not exist.", "Failure To Open Database");
+                MessageBox.Show(App.Window, $"File Does Not Exist: {conn.DataSource}\r\rCannot open a file that does not exist.", "Failure To Open Database", MessageBoxButton.OK, MessageBoxImage.Error);
             }
 
             return (open, reason);

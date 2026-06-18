@@ -87,7 +87,7 @@ namespace CommissioningChecklistGenerator.UI
         {
             if (Authentication.OpenAuth.IsAuthenticated)
             {
-                MessageBoxResult result = MessageBox.Show(this, "You are currently logged in to the authentication server, would you like to log out?\r\rYou should do this if this machine is shared!", "Log Out?", MessageBoxButton.YesNo);
+                MessageBoxResult result = MessageBox.Show(this, "You are currently logged in to the authentication server, would you like to log out?\r\rYou should do this if this machine is shared!", "Log Out?", MessageBoxButton.YesNo, MessageBoxImage.Question);
                 
                 if (result == MessageBoxResult.Yes)
                 {
@@ -160,7 +160,7 @@ namespace CommissioningChecklistGenerator.UI
                 You need to provide the application a DXF or DWG drawing, and it will be automatically parsed. As long as your drawing uses the standard block and prefix system (see the engineering team standards handbook), the database will know how to retrieve tasks for any device present in the system that has been determined as "commissionable."
 
                 The database will automatically be downloaded every time you start up the application, and once every hour while it is running. To adjust the server hosting the database, open the settings window; your changes will be written to disk.
-                """, "Help");
+                """, "Help", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         /// <summary>
@@ -463,7 +463,7 @@ namespace CommissioningChecklistGenerator.UI
 
                 if (result.Success && result.System != null) { Project = result.System; }
                 
-                MessageBox.Show(this, $"{result.Reason}", $"Operation {(result.Success ? "Success" : "Failure")}");
+                MessageBox.Show(this, $"{result.Reason}", $"Operation {(result.Success ? "Success" : "Failure")}", MessageBoxButton.OK, result.Success ? MessageBoxImage.Information : MessageBoxImage.Exclamation);
                 window.Close();
             }
             ((Button)sender).IsEnabled = true;
@@ -482,11 +482,11 @@ namespace CommissioningChecklistGenerator.UI
                 {
                     args.System.CopyTo(Project);
                     Log.Information($"{Prefix} successfully parsed dxf document!");
-                    MessageBox.Show(this, "The CAD drawings were parsed, and an AV system has been created.\r\rYou may now save this configuration to a file for later use, or export the commissioning checklist immediately.", "Successfully Generated AV System!");
+                    MessageBox.Show(this, "The CAD drawings were parsed, and an AV system has been created.\r\rYou may now save this configuration to a file for later use, or export the commissioning checklist immediately.", "Successfully Generated AV System!", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 else {
                     Log.Information($"{Prefix} failure to parse dxf document!");
-                    MessageBox.Show(this, $"An error occurred parsing the system drawings. We were unable to generate an AV system object.\r\rReason: {args.Reason}", "Failed To Parse CAD Drawings"); 
+                    MessageBox.Show(this, $"An error occurred parsing the system drawings. We were unable to generate an AV system object.\r\rReason: {args.Reason}", "Failed To Parse CAD Drawings", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             });
         }
@@ -535,17 +535,17 @@ namespace CommissioningChecklistGenerator.UI
                             }
                             else {
                                 Log.Error($"{Prefix} failure to generate av system object from json file @ {dialog.FileName}");
-                                MessageBox.Show(this, $"An error occured creating an AVSystem object to represent the configuration. Something must be wrong with the file.", "Failure Creating AVSystem"); 
+                                MessageBox.Show(this, $"An error occured creating an AVSystem object to represent the configuration. Something must be wrong with the file.", "Failure Creating AVSystem", MessageBoxButton.OK, MessageBoxImage.Error);
                             }
                         }
                         else {
                             Log.Warning($"{Prefix} failure to read json file @ {dialog.FileName} -> file contents empty!");
-                            MessageBox.Show(this, $"Unable to Parse Provided File:\r\r{dialog.FileName}\r\rFile Cannot Be Empty!!", "JSON File Empty"); 
+                            MessageBox.Show(this, $"Unable to Parse Provided File:\r\r{dialog.FileName}\r\rFile Cannot Be Empty!!", "JSON File Empty", MessageBoxButton.OK, MessageBoxImage.Warning);
                         }
                     }
                     catch(Exception e) {
                         Log.Error(e, $"{Prefix} failure to read json file @ {dialog.FileName}");
-                        MessageBox.Show(this, e.Message, $"Exception {e.Source}"); 
+                        MessageBox.Show(this, e.Message, $"Exception {e.Source}", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                     finally { 
                         reader.Close(); 
@@ -554,7 +554,7 @@ namespace CommissioningChecklistGenerator.UI
                 }
                 catch(Exception e) {
                     Log.Error(e, $"{Prefix} failure to create stream reader for json file @ {dialog.FileName}");
-                    MessageBox.Show(this, e.Message, $"Exception {e.Source}"); 
+                    MessageBox.Show(this, e.Message, $"Exception {e.Source}", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             
@@ -569,7 +569,7 @@ namespace CommissioningChecklistGenerator.UI
         {
             if (wb.Worksheets.Count == 0)
             {
-                MessageBox.Show(this, "An error has occurred while attempting to generate the checklist, resulting in no worksheets being generated. The database connection must not truly be open.", "Cannot Save Chechlist");
+                MessageBox.Show(this, "An error has occurred while attempting to generate the checklist, resulting in no worksheets being generated.", "Cannot Save Checklist", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             else
             {
@@ -590,7 +590,7 @@ namespace CommissioningChecklistGenerator.UI
                     }
                     catch (Exception e)
                     {
-                        MessageBox.Show(this, e.Message, $"Exception Encountered: Saving Checklist");
+                        MessageBox.Show(this, e.Message, $"Exception Encountered: Saving Checklist", MessageBoxButton.OK, MessageBoxImage.Error);
                         Log.Error(e, $"{Prefix} saving checklist to disk @ {dialog.FileName}");
                     }
                 }
@@ -646,7 +646,7 @@ namespace CommissioningChecklistGenerator.UI
                     }
                     catch (Exception e) {
                         Log.Error(e, $"{Prefix} writing configuration to disk @ {dialog.FileName}");
-                        MessageBox.Show(this, e.Message, $"Exception {e.Source}"); 
+                        MessageBox.Show(this, e.Message, $"Exception {e.Source}", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                     finally { 
                         writer.Close(); 
@@ -655,7 +655,7 @@ namespace CommissioningChecklistGenerator.UI
                 }
                 catch (Exception e) {
                     Log.Error(e, $"{Prefix} creating stream writer to facilitate configuration to disk @ {dialog.FileName}");
-                    MessageBox.Show(this, e.Message, $"Exception {e.Source}");
+                    MessageBox.Show(this, e.Message, $"Exception {e.Source}", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             ((Button)sender).IsEnabled = true;

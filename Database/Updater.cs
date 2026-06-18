@@ -100,9 +100,9 @@ namespace CommissioningChecklistGenerator.Database
             if (success) { 
                 (bool opened, string connect) = await Querier.ConnectToLocalDatabase(); 
 
-                if (!opened) { MessageBox.Show(App.Window, $"The downloaded database file could not be opened:\r\r{connect}", "Failure Opening Database"); }
+                if (!opened) { MessageBox.Show(App.Window, $"The downloaded database file could not be opened:\r\r{connect}", "Failure Opening Database", MessageBoxButton.OK, MessageBoxImage.Error); }
             }
-            else { MessageBox.Show(App.Window, $"Unable to download the latest database: {reason}\r\rThe application was shipped with an embedded database which shall be used as a last resort but this may be out of date.", "Failure Updating Database"); }
+            else { MessageBox.Show(App.Window, $"Unable to download the latest database: {reason}\r\rThe application was shipped with an embedded database which shall be used as a last resort but this may be out of date.", "Failure Updating Database", MessageBoxButton.OK, MessageBoxImage.Warning); }
         }
 
         /// <summary>
