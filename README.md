@@ -8,6 +8,9 @@ Provided with a DXF or DWG file of a line drawing, it will parse any available d
 For example, a system expander *(denoted by the prefix **EXP**)* can be capable of expanding the audio, video, **or** control aspects of a system. Without knowing what type of expander is installed, the generator will retrieve all tasks a generic **EXP** device is capable of. By using the database, we can narrow down the capability of the device using it's checking the **model** of the device against the database. If the model of the expander in question is a QSC QIO-S4 for example, only the **control** related commissioning tasks will be retrieved, as that is the capabilities of a QIO-S4 as defined in the database.
 
 
+[![app screenshot](./.resources/screenshots/ui_main.png)](#app)
+
+
 ## Configuration
 
 ### Application Settings
@@ -77,7 +80,7 @@ The application toolbar has 3 options:
 	- use this as needed, by default the app will auto-download every hour while the app is running
 	- a progress window will indicate download progress, and disable the download button until the download is complete or has failed
 
-### Generating Checklists
+### [Generating Checklists](#app)
 
 #### Step 1 - Import Devices
 
