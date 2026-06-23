@@ -1,6 +1,6 @@
 # Commissioning Checklist Generator
-
-## [Overview](#app)
+<a name="app"></a>
+## Overview
 This application is intended to streamline the process of comissioning av integration projects by nearly automatically generating a list of commissioning tasks for devices present in a system. 
 
 Provided with a DXF or DWG file of a line drawing, it will parse any available devices from the system that can be commissioned by a Field Engineer or Quality Assurance Engineer and generate an Excel checklist containing pertinent tasks for that device. The application utilizes a SQLite database to determine what a device is capable of.
@@ -62,11 +62,11 @@ The application will open the settings window when you run it for the first time
 
 ### Toolbar
 
-[The application toolbar has 3 options:](#settings)
+The application toolbar has 3 options:
 
 - Help
 	- opens a small message box that hopefully provides assistance in using the app
-- Settings
+- Settings <a name="settings"></a>
 	- allows you to configure the following
 		- database server base url
 			- the url to the server that hosts the database. the final database location is locked to **/db/latest/database.db**
@@ -83,7 +83,8 @@ The application will open the settings window when you run it for the first time
 	- use this as needed, by default the app will auto-download every hour while the app is running
 	- a progress window will indicate download progress, and disable the download button until the download is complete or has failed
 
-### [Generating Checklists](#parsing)
+<a name="parsing"></a>
+### Generating Checklists
 
 #### Step 1 - Import Devices
 
@@ -113,7 +114,8 @@ After you have imported the devices, you need to indicate what other capabilitie
 If you want to save the system configuration for re-use later, you can export the system devices and functionality to a json file that you can re-use later. Parsing the DXF file can take some time,
 so using the configuration file will save time as it reads in the file directly. This step is optional, but handy if you have a collection of rooms that are identical but need a checklist for each.
 
-#### [Step 4 - Generate Checklist](#export)
+<a name="export"></a>
+#### Step 4 - Generate Checklist
 
 Lastly, its time to generate the checklist. This can take some time, so a progress window will show you the current step. Once completed, a file dialog will open to prompt you to save the excel checklist
 to disk with the project number so other team members can easily identify the file.
