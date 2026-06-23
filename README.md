@@ -64,7 +64,7 @@ The application will open the settings window when you run it for the first time
 
 > [!NOTE]
 >
-> (the final database path is locked within the application. The text field beneath the server URL will update to show where you should host the database file on your server.)
+> *(the final database path is locked within the application. The text field beneath the server URL will update to show where you should host the database file on your server.)*
 
 ### Toolbar
 
