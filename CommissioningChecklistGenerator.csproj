@@ -9,14 +9,16 @@
 	<IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
 	<PackageIcon>ui\icons\icon_color.ico</PackageIcon>
 	<ApplicationIcon>ui\icons\icon_color.ico</ApplicationIcon>
+	<Product>Commissioning Checklist Generator</Product>
+	<Description>A tool to parse DXF / DWG files and generate an excel checklist for commissioning AV integration projects.</Description>
+	<Title>Commissioning Checklist Generator</Title>
+	<Authors>Ryan Blajda</Authors>
+	<Company>blajda-dev</Company>
+	<PackageProjectUrl>https://github.com/blajda-dev/av-commissioning-checklist-generator</PackageProjectUrl>
+	<PackageReadmeFile>README.md</PackageReadmeFile>
+	<RepositoryUrl>https://github.com/blajda-dev/av-commissioning-checklist-generator</RepositoryUrl>
+	<AssemblyName>generator</AssemblyName>
   </PropertyGroup>
-  
-  <ItemGroup>
-    <Compile Remove="NewFolder\**" />
-    <EmbeddedResource Remove="NewFolder\**" />
-    <None Remove="NewFolder\**" />
-    <Page Remove="NewFolder\**" />
-  </ItemGroup>
   
   <ItemGroup>
     <None Remove="Authentication\Resources\sso-failure.html" />
@@ -81,6 +83,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
     <None Update="UI\Icons\icon_color.ico">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
