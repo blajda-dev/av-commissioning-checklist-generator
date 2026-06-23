@@ -9,16 +9,14 @@ For example, a system expander *(denoted by the prefix **EXP**)* can be capable 
 
 
 [![app screenshot](./.resources/screenshots/ui_main.png)](#app)
-[![app screenshot](./.resources/screenshots/ui_parsing-success.png)](#parsing)
-[![app screenshot](./.resources/screenshots/ui_export.png)](#export)
 
 ## Configuration
 
 ### Application Settings
 
-[![app screenshot](./.resources/screenshots/ui_settings.png)](#settings)
-
 In the toolbar you will need to open the Settings window to configure the server url to download the remote database. An example database is hosted at: https://blajda-gen2.loginto.me. On the first startup, the application will show the configuration window before you can start using the application. This configuration will be saved to disk and used in the future. You will enable or disable SSO here; and you'll need to configure your database server accordingly.
+
+[![app screenshot](./.resources/screenshots/ui_settings.png)](#settings)
 
 ### Database Configuration
 
@@ -88,6 +86,8 @@ The application toolbar has 3 options:
 
 #### Step 1 - Import Devices
 
+[![app screenshot](./.resources/screenshots/ui_parsing-success.png)](#parsing)
+
 To begin you'll need to import the devices from the system that can be configured. This can be done one of two ways, using the drawing parser, or an existing system
 configuration file.
 
@@ -115,7 +115,10 @@ If you want to save the system configuration for re-use later, you can export th
 so using the configuration file will save time as it reads in the file directly. This step is optional, but handy if you have a collection of rooms that are identical but need a checklist for each.
 
 <a name="export"></a>
+
 #### Step 4 - Generate Checklist
+
+[![app screenshot](./.resources/screenshots/ui_export.png)](#export)
 
 Lastly, its time to generate the checklist. This can take some time, so a progress window will show you the current step. Once completed, a file dialog will open to prompt you to save the excel checklist
 to disk with the project number so other team members can easily identify the file.
