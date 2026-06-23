@@ -39,14 +39,20 @@ parse out what devices it cares about, nor can it later on query the database to
 				- 101, 001
 				- can be more than 3 digits
 			- see source code for regex pattern
-	- *the prefixes used here **MUST ALSO EXIST IN THE DATABASE** to retrieve device **PREFIX** level commissioning tasks*
+> [!IMPORTANT] 
+> 
+> *the prefixes used here **MUST ALSO EXIST IN THE DATABASE** to retrieve device **PREFIX** level commissioning tasks*
+
 - MAKE **or** MFG
 	- the manufacturer of the device
 	- this is just part of the database relationships, not used when generating tasks
 - MODEL **or** PN
 	- the model or part number of the device
 	- when a checklist is generated, the application checks to see if a device matching the model exists. 
-		- *if commisioning tasks have been assigned at the device **MODEL** level, these override any device **PREFIX** level commissioning tasks*
+> [!IMPORTANT] 
+> 
+> *if commisioning tasks have been assigned at the device **MODEL** level, these override any device **PREFIX** level commissioning tasks*
+
 - DESCRIPTION **or** DESC
 	- not as important, but injected into the checklist in the device's checklist section, and may be useful to the QA or Field Engineer
 
@@ -56,7 +62,9 @@ parse out what devices it cares about, nor can it later on query the database to
 
 The application will open the settings window when you run it for the first time prompting you to configure the server url that is hosting the sqlite database. If you dont configure this, youll never download updates and only have the embedded version of the database that the app was shipped with, which is limited in is functionality at this time. Configure this url to point at your server. If your server is configured for SSO authentication youll also need to configure those settings here.
 
-*NOTE: (the final database path is locked within the application. The text field beneath the server URL will update to show where you should host the database file on your server.)*
+> [!NOTE]
+>
+> (the final database path is locked within the application. The text field beneath the server URL will update to show where you should host the database file on your server.)
 
 ### Toolbar
 
@@ -92,9 +100,13 @@ To begin you'll need to import the devices from the system that can be configure
 configuration file.
 
 1. Import CAD File
-	1. find the system DWG or DXF file from the CAD folder. Navigate to this file when the provided file dialog opens.
+	1. find & download the system flows DWG or DXF file from the CAD folder. 
+	1. navigate to the downloaded file when the provided file dialog opens.
 1. Import JSON File
-	1. if you have used the generator previously on an identical system or are generating them for multiple rooms in a system you can import the json file, which will be quicker than parsing the DXF drawing file. Navigate to this file when the file dialog opens.
+	1. find the previously exported json file when the provided file dialog opens
+> [!TIP] 
+> 
+> if you have used the generator previously on an identical system or are generating checklists for multiple rooms in a system; you should export/import the json file, which will be quicker than parsing the drawing file.
 	
 #### Step 2 - System Capabilities
 
@@ -112,7 +124,11 @@ After you have imported the devices, you need to indicate what other capabilitie
 #### Step 3 - Save System Configuration
 
 If you want to save the system configuration for re-use later, you can export the system devices and functionality to a json file that you can re-use later. Parsing the DXF file can take some time,
-so using the configuration file will save time as it reads in the file directly. This step is optional, but handy if you have a collection of rooms that are identical but need a checklist for each.
+so using the configuration file will save time as it reads in the file directly. 
+
+> [!TIP] 
+> 
+> this step is optional, but handy if projects in the future will contain an identical setup. Importing the JSON file is a much faster process than re-parsing the drawing file at a future date.
 
 <a name="export"></a>
 
@@ -152,6 +168,10 @@ These worksheets will be generated automatically, or left out if no matching dev
 
 ## Troubleshooting
 
+The application should handle all exceptions, and output the details of any errors or exceptions in the logs. A messagebox should be shown when or if an error occurs that a user should know about, either to resolve it or to provide the details to the staff managing the database server.
+
 The database, configuration file, and logs are all stored in here (type into a file explorer) -> %LOCALAPPDATA%/CommissioningChecklistGenerator/
 
-The application should handle all exceptions, and output the details of any errors or exceptions in the logs. A messagebox should be shown when or if an error occurs that a user should know about, either to resolve it or to provide the details to the staff managing the database server.
+> [!CAUTION]
+>
+> modifying the configuration file directly wont break the app, but it could cause the application to no longer be able to authenticate against the SSO authority, or download from the database; don't modify it directly unless you know what you are doing. The only files in the appdata location that should be accessed are logs to provide to support.
