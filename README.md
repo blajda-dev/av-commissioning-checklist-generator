@@ -174,4 +174,4 @@ The database, configuration file, and logs are all stored in here (type into a f
 
 > [!CAUTION]
 >
-> modifying the configuration file directly wont break the app, but it could cause the application to no longer be able to authenticate against the SSO authority, or download from the database; don't modify it directly unless you know what you are doing. The only files in the appdata location that should be accessed are logs to provide to support.
+> modifying the configuration file directly wont break the app, but it could cause a failure to authenticate against the SSO authority, or update the database; don't modify it directly unless you know what you are doing. The only files in the appdata location that should be accessed are logs to provide to support.
